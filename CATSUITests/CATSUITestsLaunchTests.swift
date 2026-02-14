@@ -1,13 +1,13 @@
 //
-//  MacIslandUITestsLaunchTests.swift
-//  MacIslandUITests
+//  CATSUITestsLaunchTests.swift
+//  CATSUITests
 //
-//  Created by Ravindra Singh on 10/08/24.
+//  CATS - Cognitive-Aware Task Scheduler
 //
 
 import XCTest
 
-final class MacIslandUITestsLaunchTests: XCTestCase {
+final class CATSUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
@@ -20,9 +20,6 @@ final class MacIslandUITestsLaunchTests: XCTestCase {
     func testLaunch() throws {
         let app = XCUIApplication()
         app.launch()
-
-        // Insert steps here to perform after app launch but before taking a screenshot,
-        // such as logging into a test account or navigating somewhere in the app
 
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Launch Screen"

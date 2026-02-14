@@ -11,9 +11,9 @@
 		55B850917AE74B8E8BBC67D0 /* TaskStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 866DF466A12A4249A12B6233 /* TaskStore.swift */; };
 		57680DED2C6789D9000233B9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 57680DEC2C6789D9000233B9 /* Assets.xcassets */; };
 		57680DF02C6789D9000233B9 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 57680DEF2C6789D9000233B9 /* Preview Assets.xcassets */; };
-		57680DFB2C6789D9000233B9 /* MacIslandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680DFA2C6789D9000233B9 /* MacIslandTests.swift */; };
-		57680E052C6789D9000233B9 /* MacIslandUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680E042C6789D9000233B9 /* MacIslandUITests.swift */; };
-		57680E072C6789D9000233B9 /* MacIslandUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680E062C6789D9000233B9 /* MacIslandUITestsLaunchTests.swift */; };
+		57680DFB2C6789D9000233B9 /* CATSTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680DFA2C6789D9000233B9 /* CATSTests.swift */; };
+		57680E052C6789D9000233B9 /* CATSUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680E042C6789D9000233B9 /* CATSUITests.swift */; };
+		57680E072C6789D9000233B9 /* CATSUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680E062C6789D9000233B9 /* CATSUITestsLaunchTests.swift */; };
 		57680E232C6789EE000233B9 /* EventMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680E132C6789EE000233B9 /* EventMonitor.swift */; };
 		57680E242C6789EE000233B9 /* Ext+NSAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680E142C6789EE000233B9 /* Ext+NSAlert.swift */; };
 		57680E252C6789EE000233B9 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680E152C6789EE000233B9 /* main.swift */; };
@@ -65,14 +65,14 @@
 			containerPortal = 57680DDD2C6789D8000233B9 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 57680DE42C6789D8000233B9;
-			remoteInfo = MacIsland;
+			remoteInfo = CATS;
 		};
 		57680E012C6789D9000233B9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 57680DDD2C6789D8000233B9 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 57680DE42C6789D8000233B9;
-			remoteInfo = MacIsland;
+			remoteInfo = CATS;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -82,15 +82,15 @@
 		1C961F4CB7114A4AB556646B /* TaskListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskListView.swift; sourceTree = "<group>"; };
 		35D70E7ABEA043B9972F6978 /* CognitiveProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CognitiveProfile.swift; sourceTree = "<group>"; };
 		48DF92BB2E0B4C7DB4DDADBA /* ChatInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatInputView.swift; sourceTree = "<group>"; };
-		57680DE52C6789D8000233B9 /* MacIsland.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacIsland.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		57680DE52C6789D8000233B9 /* CATS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CATS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		57680DEC2C6789D9000233B9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		57680DEF2C6789D9000233B9 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		57680DF12C6789D9000233B9 /* MacIsland.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacIsland.entitlements; sourceTree = "<group>"; };
-		57680DF62C6789D9000233B9 /* MacIslandTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacIslandTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		57680DFA2C6789D9000233B9 /* MacIslandTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacIslandTests.swift; sourceTree = "<group>"; };
-		57680E002C6789D9000233B9 /* MacIslandUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacIslandUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		57680E042C6789D9000233B9 /* MacIslandUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacIslandUITests.swift; sourceTree = "<group>"; };
-		57680E062C6789D9000233B9 /* MacIslandUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacIslandUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		57680DF12C6789D9000233B9 /* CATS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CATS.entitlements; sourceTree = "<group>"; };
+		57680DF62C6789D9000233B9 /* CATSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CATSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		57680DFA2C6789D9000233B9 /* CATSTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CATSTests.swift; sourceTree = "<group>"; };
+		57680E002C6789D9000233B9 /* CATSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CATSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		57680E042C6789D9000233B9 /* CATSUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CATSUITests.swift; sourceTree = "<group>"; };
+		57680E062C6789D9000233B9 /* CATSUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CATSUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		57680E132C6789EE000233B9 /* EventMonitor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EventMonitor.swift; sourceTree = "<group>"; };
 		57680E142C6789EE000233B9 /* Ext+NSAlert.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Ext+NSAlert.swift"; sourceTree = "<group>"; };
 		57680E152C6789EE000233B9 /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -161,9 +161,9 @@
 		57680DDC2C6789D8000233B9 = {
 			isa = PBXGroup;
 			children = (
-				57680DE72C6789D8000233B9 /* MacIsland */,
-				57680DF92C6789D9000233B9 /* MacIslandTests */,
-				57680E032C6789D9000233B9 /* MacIslandUITests */,
+				57680DE72C6789D8000233B9 /* CATS */,
+				57680DF92C6789D9000233B9 /* CATSTests */,
+				57680E032C6789D9000233B9 /* CATSUITests */,
 				57680DE62C6789D8000233B9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -171,14 +171,14 @@
 		57680DE62C6789D8000233B9 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				57680DE52C6789D8000233B9 /* MacIsland.app */,
-				57680DF62C6789D9000233B9 /* MacIslandTests.xctest */,
-				57680E002C6789D9000233B9 /* MacIslandUITests.xctest */,
+				57680DE52C6789D8000233B9 /* CATS.app */,
+				57680DF62C6789D9000233B9 /* CATSTests.xctest */,
+				57680E002C6789D9000233B9 /* CATSUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		57680DE72C6789D8000233B9 /* MacIsland */ = {
+		57680DE72C6789D8000233B9 /* CATS */ = {
 			isa = PBXGroup;
 			children = (
 				D3C19F0A2E5C00CD008223DE /* AnyTransition.swift */,
@@ -208,7 +208,7 @@
 				57680E152C6789EE000233B9 /* main.swift */,
 				57680E202C6789EE000233B9 /* PublishedPersist.swift */,
 				57680DEC2C6789D9000233B9 /* Assets.xcassets */,
-				57680DF12C6789D9000233B9 /* MacIsland.entitlements */,
+				57680DF12C6789D9000233B9 /* CATS.entitlements */,
 				0A3290CDA3C84DAE90A26C86 /* CATSTask.swift */,
 				BE6358ABB7C04522A92E09D1 /* CatFaces.swift */,
 				35D70E7ABEA043B9972F6978 /* CognitiveProfile.swift */,
@@ -222,7 +222,7 @@
 				7590F76BB9874482BC262382 /* CountdownPillView.swift */,
 				57680DEE2C6789D9000233B9 /* Preview Content */,
 			);
-			path = MacIsland;
+			path = CATS;
 			sourceTree = "<group>";
 		};
 		57680DEE2C6789D9000233B9 /* Preview Content */ = {
@@ -233,29 +233,29 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
-		57680DF92C6789D9000233B9 /* MacIslandTests */ = {
+		57680DF92C6789D9000233B9 /* CATSTests */ = {
 			isa = PBXGroup;
 			children = (
-				57680DFA2C6789D9000233B9 /* MacIslandTests.swift */,
+				57680DFA2C6789D9000233B9 /* CATSTests.swift */,
 			);
-			path = MacIslandTests;
+			path = CATSTests;
 			sourceTree = "<group>";
 		};
-		57680E032C6789D9000233B9 /* MacIslandUITests */ = {
+		57680E032C6789D9000233B9 /* CATSUITests */ = {
 			isa = PBXGroup;
 			children = (
-				57680E042C6789D9000233B9 /* MacIslandUITests.swift */,
-				57680E062C6789D9000233B9 /* MacIslandUITestsLaunchTests.swift */,
+				57680E042C6789D9000233B9 /* CATSUITests.swift */,
+				57680E062C6789D9000233B9 /* CATSUITestsLaunchTests.swift */,
 			);
-			path = MacIslandUITests;
+			path = CATSUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		57680DE42C6789D8000233B9 /* MacIsland */ = {
+		57680DE42C6789D8000233B9 /* CATS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 57680E0A2C6789D9000233B9 /* Build configuration list for PBXNativeTarget "MacIsland" */;
+			buildConfigurationList = 57680E0A2C6789D9000233B9 /* Build configuration list for PBXNativeTarget "CATS" */;
 			buildPhases = (
 				57680DE12C6789D8000233B9 /* Sources */,
 				57680DE22C6789D8000233B9 /* Frameworks */,
@@ -265,7 +265,7 @@
 			);
 			dependencies = (
 			);
-			name = MacIsland;
+			name = CATS;
 			packageProductDependencies = (
 				57680E582C678A63000233B9 /* ColorfulX */,
 				57680E5B2C678A73000233B9 /* Pow */,
@@ -276,13 +276,13 @@
 				57680E662C678A87000233B9 /* HeapModule */,
 				57680E692C678A98000233B9 /* LaunchAtLogin */,
 			);
-			productName = MacIsland;
-			productReference = 57680DE52C6789D8000233B9 /* MacIsland.app */;
+			productName = CATS;
+			productReference = 57680DE52C6789D8000233B9 /* CATS.app */;
 			productType = "com.apple.product-type.application";
 		};
-		57680DF52C6789D9000233B9 /* MacIslandTests */ = {
+		57680DF52C6789D9000233B9 /* CATSTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 57680E0D2C6789D9000233B9 /* Build configuration list for PBXNativeTarget "MacIslandTests" */;
+			buildConfigurationList = 57680E0D2C6789D9000233B9 /* Build configuration list for PBXNativeTarget "CATSTests" */;
 			buildPhases = (
 				57680DF22C6789D9000233B9 /* Sources */,
 				57680DF32C6789D9000233B9 /* Frameworks */,
@@ -293,14 +293,14 @@
 			dependencies = (
 				57680DF82C6789D9000233B9 /* PBXTargetDependency */,
 			);
-			name = MacIslandTests;
-			productName = MacIslandTests;
-			productReference = 57680DF62C6789D9000233B9 /* MacIslandTests.xctest */;
+			name = CATSTests;
+			productName = CATSTests;
+			productReference = 57680DF62C6789D9000233B9 /* CATSTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		57680DFF2C6789D9000233B9 /* MacIslandUITests */ = {
+		57680DFF2C6789D9000233B9 /* CATSUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 57680E102C6789D9000233B9 /* Build configuration list for PBXNativeTarget "MacIslandUITests" */;
+			buildConfigurationList = 57680E102C6789D9000233B9 /* Build configuration list for PBXNativeTarget "CATSUITests" */;
 			buildPhases = (
 				57680DFC2C6789D9000233B9 /* Sources */,
 				57680DFD2C6789D9000233B9 /* Frameworks */,
@@ -311,9 +311,9 @@
 			dependencies = (
 				57680E022C6789D9000233B9 /* PBXTargetDependency */,
 			);
-			name = MacIslandUITests;
-			productName = MacIslandUITests;
-			productReference = 57680E002C6789D9000233B9 /* MacIslandUITests.xctest */;
+			name = CATSUITests;
+			productName = CATSUITests;
+			productReference = 57680E002C6789D9000233B9 /* CATSUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -339,7 +339,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 57680DE02C6789D8000233B9 /* Build configuration list for PBXProject "MacIsland" */;
+			buildConfigurationList = 57680DE02C6789D8000233B9 /* Build configuration list for PBXProject "CATS" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -358,9 +358,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				57680DE42C6789D8000233B9 /* MacIsland */,
-				57680DF52C6789D9000233B9 /* MacIslandTests */,
-				57680DFF2C6789D9000233B9 /* MacIslandUITests */,
+				57680DE42C6789D8000233B9 /* CATS */,
+				57680DF52C6789D9000233B9 /* CATSTests */,
+				57680DFF2C6789D9000233B9 /* CATSUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -440,7 +440,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				57680DFB2C6789D9000233B9 /* MacIslandTests.swift in Sources */,
+				57680DFB2C6789D9000233B9 /* CATSTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -448,8 +448,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				57680E052C6789D9000233B9 /* MacIslandUITests.swift in Sources */,
-				57680E072C6789D9000233B9 /* MacIslandUITestsLaunchTests.swift in Sources */,
+				57680E052C6789D9000233B9 /* CATSUITests.swift in Sources */,
+				57680E072C6789D9000233B9 /* CATSUITestsLaunchTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -458,12 +458,12 @@
 /* Begin PBXTargetDependency section */
 		57680DF82C6789D9000233B9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 57680DE42C6789D8000233B9 /* MacIsland */;
+			target = 57680DE42C6789D8000233B9 /* CATS */;
 			targetProxy = 57680DF72C6789D9000233B9 /* PBXContainerItemProxy */;
 		};
 		57680E022C6789D9000233B9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 57680DE42C6789D8000233B9 /* MacIsland */;
+			target = 57680DE42C6789D8000233B9 /* CATS */;
 			targetProxy = 57680E012C6789D9000233B9 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -592,16 +592,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = MacIsland/MacIsland.entitlements;
+				CODE_SIGN_ENTITLEMENTS = CATS/CATS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"MacIsland/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"CATS/Preview Content\"";
 				DEVELOPMENT_TEAM = 8KLYUA56BF;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = MacIsland/Info.plist;
+				INFOPLIST_FILE = CATS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = CATS;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -622,16 +622,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = MacIsland/MacIsland.entitlements;
+				CODE_SIGN_ENTITLEMENTS = CATS/CATS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"MacIsland/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"CATS/Preview Content\"";
 				DEVELOPMENT_TEAM = 8KLYUA56BF;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = MacIsland/Info.plist;
+				INFOPLIST_FILE = CATS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = CATS;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -658,11 +658,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rkinnovate.MacIslandTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rkinnovate.CATSTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacIsland.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MacIsland";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CATS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CATS";
 			};
 			name = Debug;
 		};
@@ -677,11 +677,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rkinnovate.MacIslandTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rkinnovate.CATSTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacIsland.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MacIsland";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CATS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CATS";
 			};
 			name = Release;
 		};
@@ -694,11 +694,11 @@
 				DEVELOPMENT_TEAM = 86Y9L37F45;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rkinnovate.MacIslandUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rkinnovate.CATSUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = MacIsland;
+				TEST_TARGET_NAME = CATS;
 			};
 			name = Debug;
 		};
@@ -711,18 +711,18 @@
 				DEVELOPMENT_TEAM = 86Y9L37F45;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rkinnovate.MacIslandUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rkinnovate.CATSUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = MacIsland;
+				TEST_TARGET_NAME = CATS;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		57680DE02C6789D8000233B9 /* Build configuration list for PBXProject "MacIsland" */ = {
+		57680DE02C6789D8000233B9 /* Build configuration list for PBXProject "CATS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				57680E082C6789D9000233B9 /* Debug */,
@@ -731,7 +731,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		57680E0A2C6789D9000233B9 /* Build configuration list for PBXNativeTarget "MacIsland" */ = {
+		57680E0A2C6789D9000233B9 /* Build configuration list for PBXNativeTarget "CATS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				57680E0B2C6789D9000233B9 /* Debug */,
@@ -740,7 +740,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		57680E0D2C6789D9000233B9 /* Build configuration list for PBXNativeTarget "MacIslandTests" */ = {
+		57680E0D2C6789D9000233B9 /* Build configuration list for PBXNativeTarget "CATSTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				57680E0E2C6789D9000233B9 /* Debug */,
@@ -749,7 +749,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		57680E102C6789D9000233B9 /* Build configuration list for PBXNativeTarget "MacIslandUITests" */ = {
+		57680E102C6789D9000233B9 /* Build configuration list for PBXNativeTarget "CATSUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				57680E112C6789D9000233B9 /* Debug */,

@@ -1,16 +1,16 @@
-# Contributing to MacIsland
+# Contributing to CATS
 
-Thank you for your interest in contributing to **MacIsland**! We welcome contributions from the community and appreciate your efforts to help make this project better.
+Thank you for your interest in contributing to **CATS**! We welcome contributions from the community and appreciate your efforts to help make this project better.
 
 ## How to Contribute
 
 ### 1. Reporting Issues
 
-If you find a bug or have a feature request, please open an issue in the [GitHub Issues](https://github.com/BadRat-In/MacIsland/issues) section.
+If you find a bug or have a feature request, please open an issue in the GitHub Issues section.
 
 ### 2. Forking the Repository
 
-Before making changes, please fork the repository to your own GitHub account. This ensures that you have your own version of the project to work on.
+Before making changes, please fork the repository to your own GitHub account.
 
 ### 3. Creating a New Branch
 
@@ -46,14 +46,10 @@ git push origin feature-branch-name
 
 ### 8. Submitting a Pull Request
 
-Go to the original repository and submit a pull request. Please include a description of the changes you’ve made and reference any related issues.
+Go to the original repository and submit a pull request. Please include a description of the changes you've made and reference any related issues.
 
 ## Code of Conduct
 
-This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report any unacceptable behavior to the project maintainers.
+This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
-## Getting Help
-
-If you have any questions or need further assistance, feel free to open an issue or reach out to the project maintainers.
-
-Thank you for contributing to MacIsland!
+Thank you for contributing to CATS!
