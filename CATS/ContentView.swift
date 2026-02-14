@@ -8,7 +8,7 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         VStack(spacing: 12) {
-            Text(CatFaces.happy.randomElement()!)
+            Text(CatFaces.page.home)
                 .font(.system(size: 48))
             Text("CATS")
                 .font(.system(size: 24, weight: .bold, design: .rounded))

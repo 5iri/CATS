@@ -71,19 +71,22 @@ class CalendarManager: ObservableObject {
     func fetchUpcomingEvents() {
         guard isAuthorized else { return }
 
-        let calendar = Calendar.current
-        let now = Date()
-        guard let endDate = calendar.date(byAdding: .day, value: 14, to: now) else { return }
+        let store = self.eventStore
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let calendar = Calendar.current
+            let now = Date()
+            guard let endDate = calendar.date(byAdding: .day, value: 14, to: now) else { return }
 
-        let predicate = eventStore.predicateForEvents(
-            withStart: now,
-            end: endDate,
-            calendars: nil
-        )
+            let predicate = store.predicateForEvents(
+                withStart: now,
+                end: endDate,
+                calendars: nil
+            )
 
-        let events = eventStore.events(matching: predicate)
-        DispatchQueue.main.async {
-            self.calendarEvents = events.sorted { $0.startDate < $1.startDate }
+            let events = store.events(matching: predicate)
+            DispatchQueue.main.async {
+                self?.calendarEvents = events.sorted { $0.startDate < $1.startDate }
+            }
         }
     }
 

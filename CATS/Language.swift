@@ -57,7 +57,7 @@ private func restartApp() {
     guard let appPath = Bundle.main.executablePath else { return }
     NSApp.terminate(nil)
 
-    DispatchQueue.global().asyncAfter(deadline: .now() + 0.5) {
+    DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 0.5) {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: appPath)
         try? process.run()
@@ -78,7 +78,7 @@ private extension Bundle {
         } else {
             UserDefaults.standard.removeObject(forKey: "AppleLanguages")
         }
-        UserDefaults.standard.synchronize()
+        // synchronize() removed — UserDefaults persists automatically
     }
 }
 

@@ -82,7 +82,7 @@ struct ChatInputView: View {
 
     private var welcomeMessage: some View {
         VStack(spacing: 8) {
-            Text(CatFaces.happy.randomElement()!)
+            Text(CatFaces.page.welcome)
                 .font(.system(size: 24))
 
             Text("What do you need to work on?")

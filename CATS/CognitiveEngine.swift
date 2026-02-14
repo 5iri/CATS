@@ -170,14 +170,14 @@ class CognitiveEngine {
             return (
                 true,
                 "Time for a recovery break! You've been working hard.",
-                CatFaces.sleepy.randomElement()!
+                CatFaces.page.breakHint
             )
         }
         if profile.needsMicroBreak {
             return (
                 true,
                 "Quick break? Your brain will thank you.",
-                CatFaces.sleepy.randomElement()!
+                CatFaces.page.microBreak
             )
         }
         return (false, "", "")

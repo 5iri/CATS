@@ -9,7 +9,7 @@ struct CountdownPillView: View {
     @ObservedObject var taskStore: TaskStore
     @ObservedObject var profile: CognitiveProfile
 
-    @State private var currentCat: String = CatFaces.random()
+    @State private var currentCat: String = CatFaces.page.home
     @State private var catTimer: Timer?
 
     var body: some View {
@@ -66,7 +66,7 @@ struct CountdownPillView: View {
             DispatchQueue.main.async {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     if let task = taskStore.nextDeadlineTask, task.isUrgent {
-                        currentCat = CatFaces.stressed.randomElement()!
+                        currentCat = CatFaces.page.urgent
                     } else {
                         currentCat = CatFaces.forMood(energy: profile.currentEnergy)
                     }

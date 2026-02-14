@@ -96,7 +96,7 @@ struct DynamicIslandView: View {
                         HStack {
                             Text("CATS")
                                 .font(.system(size: 11, weight: .bold, design: .rounded))
-                            Text(CatFaces.focused.randomElement()!)
+                            Text(CatFaces.page.dropdown)
                                 .font(.system(size: 11))
                             Spacer()
                             Text("\(vm.taskStore.activeTasks.count) active")

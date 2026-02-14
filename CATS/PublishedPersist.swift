@@ -53,7 +53,7 @@ struct Persist<Value: Codable> {
 
         var cancellables: Set<AnyCancellable> = .init()
         subject
-            .receive(on: DispatchQueue.global())
+            .receive(on: DispatchQueue.global(qos: .utility))
             .map { try? valueEncoder.encode($0) }
             .removeDuplicates()
             .sink { engine.set($0, forKey: key) }

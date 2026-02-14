@@ -120,7 +120,7 @@ extension DynamicIslandViewModel {
             .store(in: &cancellables)
 
         $status
-            .debounce(for: 0.5, scheduler: DispatchQueue.global())
+            .debounce(for: 0.5, scheduler: DispatchQueue.global(qos: .userInitiated))
             .filter { $0 == .closed }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in

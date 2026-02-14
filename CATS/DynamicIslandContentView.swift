@@ -71,7 +71,7 @@ struct DynamicIslandContentView: View {
 
     private var emptyTasksView: some View {
         VStack(spacing: 8) {
-            Text(CatFaces.sleepy.randomElement()!)
+            Text(CatFaces.page.emptyTasks)
                 .font(.system(size: 22))
             Text("No tasks yet! Click Chat to add one.")
                 .font(.system(size: 11, design: .rounded))
@@ -145,7 +145,7 @@ struct DynamicIslandContentView: View {
            let highTask = vm.taskStore.activeTasks.first(where: { $0.cognitiveLoad >= 7 })
         {
             return (
-                CatFaces.focused.randomElement()!,
+                CatFaces.page.peakHour,
                 "Peak hour! Great time for \"\(highTask.title)\" (load: \(highTask.cognitiveLoad)/10)"
             )
         }
@@ -153,7 +153,7 @@ struct DynamicIslandContentView: View {
         // Low energy warning
         if profile.currentEnergy < 30 {
             return (
-                CatFaces.sleepy.randomElement()!,
+                CatFaces.page.lowEnergy,
                 "Energy low at \(Int(profile.currentEnergy))%. Consider a break or light tasks."
             )
         }

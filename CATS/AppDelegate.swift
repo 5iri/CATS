@@ -67,12 +67,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func determineIfProcessIdentifierMatches() {
         let pid = String(NSRunningApplication.current.processIdentifier)
-        let content = (try? String(contentsOf: pidFile)) ?? ""
-        guard pid.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-            == content.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        else {
-            NSApp.terminate(nil)
-            return
+        let url = pidFile
+        DispatchQueue.global(qos: .utility).async {
+            let content = (try? String(contentsOf: url)) ?? ""
+            guard pid.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                == content.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            else {
+                DispatchQueue.main.async {
+                    NSApp.terminate(nil)
+                }
+                return
+            }
         }
     }
 

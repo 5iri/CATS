@@ -95,7 +95,7 @@ struct TaskListView: View {
 
     private var emptyState: some View {
         VStack(spacing: 12) {
-            Text(CatFaces.sleepy.randomElement()!)
+            Text(CatFaces.page.emptyTasks)
                 .font(.system(size: 28))
             Text("No tasks yet")
                 .font(.system(size: 13, weight: .medium, design: .rounded))

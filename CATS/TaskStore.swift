@@ -10,13 +10,16 @@ class TaskStore: ObservableObject {
     static let shared = TaskStore()
 
     @Published var tasks: [CATSTask] = [] {
-        didSet { saveToDisk() }
+        didSet { scheduleSave() }
     }
 
     @Published var currentTime: Date = Date()
 
     private var timer: Timer?
     private let storageURL: URL
+    private let persistQueue = DispatchQueue(label: "com.cats.taskstore.persist", qos: .utility)
+    private var saveWorkItem: DispatchWorkItem?
+    private var isLoading = false
 
     private init() {
         storageURL = documentsDirectory.appendingPathComponent("tasks.json")
@@ -94,11 +97,19 @@ class TaskStore: ObservableObject {
 
     // MARK: - Persistence
 
-    private func saveToDisk() {
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        guard let data = try? encoder.encode(tasks) else { return }
-        try? data.write(to: storageURL, options: .atomic)
+    private func scheduleSave() {
+        guard !isLoading else { return }
+        saveWorkItem?.cancel()
+        let tasks = self.tasks
+        let url = self.storageURL
+        let workItem = DispatchWorkItem {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            guard let data = try? encoder.encode(tasks) else { return }
+            try? data.write(to: url, options: .atomic)
+        }
+        saveWorkItem = workItem
+        persistQueue.asyncAfter(deadline: .now() + 0.2, execute: workItem)
     }
 
     private func loadFromDisk() {
@@ -106,7 +117,9 @@ class TaskStore: ObservableObject {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         guard let loaded = try? decoder.decode([CATSTask].self, from: data) else { return }
+        isLoading = true
         tasks = loaded
+        isLoading = false
     }
 
     // MARK: - Timer

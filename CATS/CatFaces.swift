@@ -224,13 +224,32 @@ struct CatFaces {
         "(✦థ ｪ థ)",
     ]
 
+    // MARK: - Fixed page cats (one cat per context, never changes)
+
+    static let page = (
+        home:       "(=^･ω･^=)",        // main landing — the classic
+        welcome:    "(=^ ◡ ^=)",         // chat welcome — friendly smile
+        emptyTasks: "ฅ(´-ω-`)ฅ",        // no tasks — sleepy paws
+        dropdown:   "(*ΦωΦ*)",           // dropdown header — attentive
+        deepReady:  "(p`･ω･´) q",       // deep work start — determined
+        deepFocus:  "(ΦωΦ)",             // active session — locked in
+        deepFlow:   "d(=^･ω･^=)b",      // 25+ min session — in the zone
+        deepTired:  "ฅ( ᵕ ω ᵕ )ฅ",     // 45+ min session — getting tired
+        breakTime:  "₍ᵔ·͈༝·͈ᵔ₎",        // recovery break — peaceful
+        peakHour:   "(ΦωΦ)",             // peak hour suggestion — focused
+        lowEnergy:  "( =ω=)..nyaa",     // low energy warning — sleepy
+        breakHint:  "ฅ(´-ω-`)ฅ",        // break suggestion — need rest
+        microBreak: "( =ω=)..nyaa",     // micro break — a little sleepy
+        urgent:     "(ↀДↀ)"             // urgent task — alert
+    )
+
     static func forMood(energy: Double) -> String {
         switch energy {
-        case 80...100: return happy.randomElement()!
-        case 60..<80: return focused.randomElement()!
-        case 40..<60: return sleepy.randomElement()!
-        case 20..<40: return stressed.randomElement()!
-        default: return stressed.randomElement()!
+        case 80...100: return "(=^･ω･^=)"
+        case 60..<80:  return "(ΦωΦ)"
+        case 40..<60:  return "ฅ(´-ω-`)ฅ"
+        case 20..<40:  return "(=;ω;=)"
+        default:       return "(ↀДↀ)"
         }
     }
 

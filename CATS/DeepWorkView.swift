@@ -33,7 +33,7 @@ struct DeepWorkView: View {
     private var startSessionView: some View {
         VStack(spacing: 10) {
             // Cat + Status
-            Text(CatFaces.focused.randomElement()!)
+            Text(CatFaces.page.deepReady)
                 .font(.system(size: 20))
 
             Text("Ready for Deep Work?")
@@ -163,7 +163,7 @@ struct DeepWorkView: View {
 
     private var breakView: some View {
         VStack(spacing: 8) {
-            Text(CatFaces.sleepy.randomElement()!)
+            Text(CatFaces.page.breakTime)
                 .font(.system(size: 24))
 
             Text("Recovery Break")
@@ -265,10 +265,9 @@ struct DeepWorkView: View {
 
     private var sessionCat: String {
         let minutes = profile.focusSessionElapsedMinutes
-        if minutes < 10 { return CatFaces.focused.randomElement()! }
-        if minutes < 25 { return CatFaces.focused.randomElement()! }
-        if minutes < 45 { return CatFaces.happy.randomElement()! }
-        return CatFaces.sleepy.randomElement()!
+        if minutes < 25 { return CatFaces.page.deepFocus }
+        if minutes < 45 { return CatFaces.page.deepFlow }
+        return CatFaces.page.deepTired
     }
 
     private var energyColor: Color {
