@@ -29,14 +29,8 @@ extension DynamicIslandViewModel {
                         notchClose()
                     } else if deviceNotchRect.insetBy(dx: inset, dy: inset).contains(mouseLocation) {
                         notchClose()
-                    } else if headlineOpenedRect.contains(mouseLocation) {
-                        // Toggle between current view and chat
-                        if contentType == .chat {
-                            contentType = .tasks
-                        } else {
-                            contentType = .chat
-                        }
                     }
+                    // Removed: header click toggle (now handled by dedicated nav buttons)
                 case .dropdown:
                     // Click outside dropdown -> close
                     if !notchDropdownRect.contains(mouseLocation) {

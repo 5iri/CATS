@@ -138,18 +138,22 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
     }
 
     func showSettings() {
+        guard contentType != .settings else { return }
         contentType = .settings
     }
 
     func showChat() {
+        guard contentType != .chat else { return }
         contentType = .chat
     }
 
     func showDeepWork() {
+        guard contentType != .deepWork else { return }
         contentType = .deepWork
     }
 
     func showTasks() {
+        guard contentType != .tasks else { return }
         contentType = .tasks
     }
 
