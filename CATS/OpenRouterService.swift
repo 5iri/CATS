@@ -30,9 +30,7 @@ struct LLMChatResponse: Codable {
 class OpenRouterService: ObservableObject {
     static let shared = OpenRouterService()
 
-    // Hardcoded fallback — always works even if persistence fails
-    static let fallbackAPIKey = "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"
-    static let fallbackModel = "stepfun/step-3.5-flash:free"
+    static let defaultModel = "stepfun/step-3.5-flash:free"
 
     @PublishedPersist(key: "cats_openrouter_api_key2", defaultValue: "")
     var apiKey: String
@@ -43,19 +41,16 @@ class OpenRouterService: ObservableObject {
     @Published var isProcessing: Bool = false
     @Published var lastError: String?
 
-    /// The actual key to use — persisted value if set, otherwise hardcoded fallback
-    var effectiveAPIKey: String {
-        let key = apiKey
-        return key.isEmpty ? Self.fallbackAPIKey : key
-    }
+    /// The actual key to use — user must provide their own key in Settings
+    var effectiveAPIKey: String { apiKey }
 
     /// The actual model to use
     var effectiveModel: String {
         let m = model
-        return m.isEmpty ? Self.fallbackModel : m
+        return m.isEmpty ? Self.defaultModel : m
     }
 
-    var isConfigured: Bool { !effectiveAPIKey.isEmpty }
+    var isConfigured: Bool { !apiKey.isEmpty }
 
     private let baseURL = "https://openrouter.ai/api/v1/chat/completions"
 

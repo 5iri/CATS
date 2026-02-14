@@ -40,7 +40,7 @@ struct DynamicIslandSettingsView: View {
         }
         .transition(.scale(scale: 0.8).combined(with: .opacity))
         .onAppear {
-            apiKeyInput = llm.effectiveAPIKey
+            apiKeyInput = llm.apiKey
             apiKeyStatus = llm.isConfigured ? .valid : .unchecked
         }
     }

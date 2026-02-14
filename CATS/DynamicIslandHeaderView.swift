@@ -88,10 +88,20 @@ struct DynamicIslandHeaderView: View {
                 .changeEffect(.jump(height: 5), value: vm.profile.currentStreak)
             }
 
-            // Navigation dots
-            Image(systemName: "message")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+            // Navigation buttons
+            Button(action: { vm.showSettings() }) {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 12))
+                    .foregroundStyle(vm.contentType == .settings ? .white : .secondary)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: { vm.showChat() }) {
+                Image(systemName: "message")
+                    .font(.system(size: 12))
+                    .foregroundStyle(vm.contentType == .chat ? .white : .secondary)
+            }
+            .buttonStyle(.plain)
         }
         .animation(vm.animation, value: vm.contentType)
         .onAppear {
