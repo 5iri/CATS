@@ -152,27 +152,71 @@ class CalendarManager: ObservableObject {
     func writeDeadlineToCalendar(for task: CATSTask) -> String? {
         guard isAuthorized else { return nil }
 
+        // Schedule the study block at the next free slot, NOT at the deadline
+        let start = nextFreeSlot(duration: task.estimatedMinutes)
+        let end = start.addingTimeInterval(Double(task.estimatedMinutes) * 60)
+
         let event = EKEvent(eventStore: eventStore)
-        event.title = "Deadline: \(task.title)"
-        event.startDate = task.deadline.addingTimeInterval(-3600) // 1 hour before
-        event.endDate = task.deadline
+        event.title = "CATS: \(task.title)"
+        event.startDate = start
+        event.endDate = end
         event.notes = """
-            CATS Task Deadline
             Cognitive Load: \(task.cognitiveLoad)/10
-            \(CatFaces.focused.randomElement()!)
+            Category: \(task.category.rawValue)
+            Duration: \(task.estimatedMinutes)m
+            Scheduled by CATS (=^·ω·^=)
             """
         event.calendar = eventStore.defaultCalendarForNewEvents
 
-        let alarm = EKAlarm(relativeOffset: -1800) // 30 min before
+        let alarm = EKAlarm(relativeOffset: -300) // 5 min before
         event.addAlarm(alarm)
 
         do {
             try eventStore.save(event, span: .thisEvent)
+            fetchUpcomingEvents()
             return event.eventIdentifier
         } catch {
-            print("[CATS] Failed to save deadline event: \(error)")
+            print("[CATS] Failed to save calendar event: \(error)")
             return nil
         }
+    }
+
+    /// Find the next free time slot starting from now that fits the given duration
+    private func nextFreeSlot(duration: Int) -> Date {
+        let calendar = Calendar.current
+        let now = Date()
+
+        // Round up to next 5-minute mark
+        var components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: now)
+        let minute = components.minute ?? 0
+        components.minute = ((minute + 4) / 5) * 5
+        let roundedNow = calendar.date(from: components) ?? now
+
+        let needed = TimeInterval(duration * 60)
+
+        // Get existing CATS events for today to avoid overlap
+        let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 0, of: now) ?? now
+        let predicate = eventStore.predicateForEvents(
+            withStart: roundedNow,
+            end: endOfDay,
+            calendars: nil
+        )
+        let existing = eventStore.events(matching: predicate)
+            .filter { $0.title?.contains("CATS:") == true }
+            .sorted { $0.startDate < $1.startDate }
+
+        // Try to fit after each existing CATS event
+        var candidate = roundedNow
+        for event in existing {
+            guard let evStart = event.startDate, let evEnd = event.endDate else { continue }
+            // If our candidate overlaps this event, push past it
+            let candidateEnd = candidate.addingTimeInterval(needed)
+            if candidate < evEnd && candidateEnd > evStart {
+                candidate = evEnd
+            }
+        }
+
+        return candidate
     }
 
     func removeEvent(identifier: String) {

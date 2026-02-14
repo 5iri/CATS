@@ -182,6 +182,15 @@ struct DynamicIslandContentView: View {
                 Text(task.title)
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
                     .lineLimit(1)
+
+                // Duration pill
+                Text(task.durationLabel)
+                    .font(.system(size: 7, weight: .bold, design: .monospaced))
+                    .foregroundStyle(durationColor(task.estimatedMinutes))
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(durationColor(task.estimatedMinutes).opacity(0.15))
+                    .clipShape(Capsule())
             }
 
             HStack(spacing: 4) {
@@ -216,6 +225,14 @@ struct DynamicIslandContentView: View {
                     lineWidth: 1
                 )
         )
+    }
+
+    private func durationColor(_ minutes: Int) -> Color {
+        switch minutes {
+        case 15: return .green
+        case 30: return .blue
+        default: return .purple
+        }
     }
 
     private func loadColor(_ load: Int) -> Color {

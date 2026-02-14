@@ -66,6 +66,7 @@ struct CountdownPillView: View {
             startCatRotation()
         }
         .onDisappear {
+
             catTimer?.invalidate()
         }
     }

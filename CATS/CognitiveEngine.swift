@@ -659,20 +659,17 @@ class CognitiveEngine {
             let match = String(text[range])
             let nums = match.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
             if let val = Int(nums) {
-                if match.contains("hr") || match.contains("hour") {
-                    return val * 60
-                }
-                return val
+                let raw = match.contains("hr") || match.contains("hour") ? val * 60 : val
+                return CATSTask.snapDuration(raw)
             }
         }
 
-        // Estimate based on cognitive load
+        // Estimate based on cognitive load → snapped to 15/30/60
         switch cognitiveLoad {
-        case 1...3: return 30
-        case 4...6: return 60
-        case 7...8: return 90
-        case 9...10: return 120
-        default: return 60
+        case 1...3: return 15
+        case 4...6: return 30
+        case 7...10: return 60
+        default: return 30
         }
     }
 

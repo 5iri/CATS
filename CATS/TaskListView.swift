@@ -17,6 +17,27 @@ struct TaskListView: View {
         taskStore.smartScheduledTasks(profile: profile)
     }
 
+    /// Compute sequential start times: each task starts after the previous one ends
+    private var scheduledStartTimes: [UUID: Date] {
+        var times: [UUID: Date] = [:]
+        var cursor = taskStore.currentTime // start from now
+
+        // In-progress tasks start "now"
+        for task in taskStore.inProgressTasks {
+            times[task.id] = cursor
+            cursor = cursor.addingTimeInterval(Double(task.estimatedMinutes) * 60)
+        }
+
+        // Pending tasks in smart order, each after the previous
+        let scheduled = smartTasks.filter { $0.status == .pending }
+        for task in scheduled {
+            times[task.id] = cursor
+            cursor = cursor.addingTimeInterval(Double(task.estimatedMinutes) * 60)
+        }
+
+        return times
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             headerBar
@@ -382,6 +403,7 @@ struct TaskListView: View {
         TaskRowView(
             task: task,
             currentTime: taskStore.currentTime,
+            scheduledStart: scheduledStartTimes[task.id],
             bandwidthMatch: profile.bandwidthMatch(for: task.cognitiveLoad),
             schedulingReason: CognitiveEngine.shared.schedulingReason(for: task, profile: profile),
             onComplete: {

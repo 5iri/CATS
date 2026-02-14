@@ -41,6 +41,16 @@ struct CATSTask: Identifiable, Codable, Hashable {
     var completedAt: Date?
     var createdAt: Date
 
+    /// Valid task durations
+    static let validDurations = [15, 30, 60]
+
+    /// Snap any minute value to the nearest valid duration (15, 30, or 60)
+    static func snapDuration(_ minutes: Int) -> Int {
+        if minutes <= 20 { return 15 }
+        if minutes <= 45 { return 30 }
+        return 60
+    }
+
     init(
         id: UUID = UUID(),
         title: String,
@@ -59,7 +69,7 @@ struct CATSTask: Identifiable, Codable, Hashable {
         self.description = description
         self.deadline = deadline
         self.cognitiveLoad = max(1, min(10, cognitiveLoad))
-        self.estimatedMinutes = estimatedMinutes
+        self.estimatedMinutes = Self.snapDuration(estimatedMinutes)
         self.status = status
         self.calendarEventID = calendarEventID
         self.category = category
@@ -97,6 +107,10 @@ struct CATSTask: Identifiable, Codable, Hashable {
             return "\(minutes)m \(seconds)s"
         }
         return "\(seconds)s"
+    }
+
+    var durationLabel: String {
+        "\(estimatedMinutes)m"
     }
 
     var cognitiveLoadColor: String {

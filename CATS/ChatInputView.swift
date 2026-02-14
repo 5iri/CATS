@@ -601,7 +601,7 @@ struct ChatInputView: View {
 
                     let title = llmResponse?.title ?? parsed.title
                     let cogLoad = max(1, min(10, llmResponse?.cognitiveLoad ?? parsed.cognitiveLoad))
-                    let minutes = llmResponse?.estimatedMinutes ?? parsed.estimatedMinutes
+                    let minutes = CATSTask.snapDuration(llmResponse?.estimatedMinutes ?? parsed.estimatedMinutes)
 
                     let deadline: Date
                     if let llmDeadline = llmResponse?.deadlineDescription {
@@ -657,7 +657,7 @@ struct ChatInputView: View {
                         lines.append("  \(reasoning)")
                     }
                     lines.append("Deadline: \(fmt.string(from: deadline))")
-                    lines.append("Est. \(minutes) min of \(category.rawValue.lowercased())")
+                    lines.append("Duration: \(minutes)m of \(category.rawValue.lowercased())")
 
                     chatHistory.addMessage(ChatMessage(
                         text: lines.joined(separator: "\n"),
@@ -719,13 +719,14 @@ struct ChatInputView: View {
                     let loadDesc = loadDescription(cogLoad)
                     let fmt = DateFormatter()
                     fmt.dateFormat = "MMM d, h:mm a"
-                    let xpEstimate = response.xpPreview ?? (cogLoad * (response.estimatedMinutes ?? 60) / 10)
+                    let snappedMins = CATSTask.snapDuration(response.estimatedMinutes ?? 60)
+                    let xpEstimate = response.xpPreview ?? (cogLoad * snappedMins / 10)
 
                     var lines: [String] = [response.reply]
                     lines.append("")
                     lines.append("Cognitive load: \(cogLoad)/10 (\(loadDesc))")
                     lines.append("Deadline: \(fmt.string(from: deadline))")
-                    lines.append("Est. \(response.estimatedMinutes ?? 60) min of \(category.rawValue.lowercased())")
+                    lines.append("Duration: \(snappedMins)m of \(category.rawValue.lowercased())")
 
                     chatHistory.addMessage(ChatMessage(
                         text: lines.joined(separator: "\n"),
@@ -794,7 +795,7 @@ struct ChatInputView: View {
                 Added "\(parsed.title)"!
                 Cognitive load: \(parsed.cognitiveLoad)/10 (\(loadDesc))
                 Deadline: \(fmt.string(from: parsed.deadline))
-                Est. \(parsed.estimatedMinutes) min of \(parsed.category.rawValue.lowercased())
+                Duration: \(parsed.estimatedMinutes)m of \(parsed.category.rawValue.lowercased())
                 """
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
