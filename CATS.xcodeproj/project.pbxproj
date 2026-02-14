@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1B2C3D4E5F647890ABCDEF0 /* OpenRouterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E1D2C3B4A596870FEDCBA1 /* OpenRouterService.swift */; };
 		0C76F63E78764A28A3034B5E /* CatFaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE6358ABB7C04522A92E09D1 /* CatFaces.swift */; };
 		10EF9E9930B0EE3D9117008B /* GamificationAnimations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52EAC26A85059DCFF744702E /* GamificationAnimations.swift */; };
 		55B850917AE74B8E8BBC67D0 /* TaskStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 866DF466A12A4249A12B6233 /* TaskStore.swift */; };
@@ -25,7 +24,6 @@
 		57680E2E2C6789EF000233B9 /* Ext+NSImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680E1E2C6789EE000233B9 /* Ext+NSImage.swift */; };
 		57680E302C6789EF000233B9 /* PublishedPersist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680E202C6789EE000233B9 /* PublishedPersist.swift */; };
 		57680E312C6789EF000233B9 /* EventMonitors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680E212C6789EE000233B9 /* EventMonitors.swift */; };
-		57680E342C678A0D000233B9 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 57680E332C678A0D000233B9 /* Info.plist */; };
 		57680E462C678A1F000233B9 /* ColorButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680E352C678A1F000233B9 /* ColorButtonView.swift */; };
 		57680E472C678A1F000233B9 /* DynamicIslandSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680E362C678A1F000233B9 /* DynamicIslandSettingsView.swift */; };
 		57680E482C678A1F000233B9 /* Language.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680E372C678A1F000233B9 /* Language.swift */; };
@@ -54,6 +52,7 @@
 		8A2E77E32EDF4581816258A7 /* CognitiveProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D70E7ABEA043B9972F6978 /* CognitiveProfile.swift */; };
 		975F841E02624701945E1475 /* CalendarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC063E6F84184127B4BD8937 /* CalendarManager.swift */; };
 		9B7CA205D71E4D1E8D20A32E /* CATSTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3290CDA3C84DAE90A26C86 /* CATSTask.swift */; };
+		A1B2C3D4E5F647890ABCDEF0 /* OpenRouterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E1D2C3B4A596870FEDCBA1 /* OpenRouterService.swift */; };
 		AC1A2314A0D046FF8F3C3F56 /* DeepWorkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687DD2F7122B441F8AB5EE6A /* DeepWorkView.swift */; };
 		B009C1D3DD8747BFBC729EAC /* ChatInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48DF92BB2E0B4C7DB4DDADBA /* ChatInputView.swift */; };
 		CCB7697461D348E5BC49F6B7 /* TaskListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C961F4CB7114A4AB556646B /* TaskListView.swift */; };
@@ -80,7 +79,6 @@
 
 /* Begin PBXFileReference section */
 		0A3290CDA3C84DAE90A26C86 /* CATSTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CATSTask.swift; sourceTree = "<group>"; };
-		F0E1D2C3B4A596870FEDCBA1 /* OpenRouterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenRouterService.swift; sourceTree = "<group>"; };
 		144E485B7C6944BA95C299C9 /* CognitiveEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CognitiveEngine.swift; sourceTree = "<group>"; };
 		1C961F4CB7114A4AB556646B /* TaskListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskListView.swift; sourceTree = "<group>"; };
 		35D70E7ABEA043B9972F6978 /* CognitiveProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CognitiveProfile.swift; sourceTree = "<group>"; };
@@ -127,6 +125,7 @@
 		D3C19F0A2E5C00CD008223DE /* AnyTransition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnyTransition.swift; sourceTree = "<group>"; };
 		D3FE94CF2E531E1800AE9BA4 /* Ext+Notification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Ext+Notification.swift"; sourceTree = "<group>"; };
 		EC063E6F84184127B4BD8937 /* CalendarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarManager.swift; sourceTree = "<group>"; };
+		F0E1D2C3B4A596870FEDCBA1 /* OpenRouterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenRouterService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -330,7 +329,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1540;
-				LastUpgradeCheck = 1540;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					57680DE42C6789D8000233B9 = {
 						CreatedOnToolsVersion = 15.4;
@@ -378,7 +377,6 @@
 			files = (
 				57680DF02C6789D9000233B9 /* Preview Assets.xcassets in Resources */,
 				57680E4E2C678A1F000233B9 /* InfoPlist.xcstrings in Resources */,
-				57680E342C678A0D000233B9 /* Info.plist in Resources */,
 				57680E492C678A1F000233B9 /* Localizable.xcstrings in Resources */,
 				57680DED2C6789D9000233B9 /* Assets.xcassets in Resources */,
 			);
@@ -511,6 +509,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -535,6 +534,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -574,6 +574,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -591,6 +592,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -604,10 +606,15 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"CATS/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CATS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = CATS;
@@ -634,10 +641,15 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"CATS/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CATS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = CATS;
@@ -658,10 +670,10 @@
 		57680E0E2C6789D9000233B9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 86Y9L37F45;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.5;
@@ -677,10 +689,10 @@
 		57680E0F2C6789D9000233B9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 86Y9L37F45;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.5;
@@ -696,9 +708,9 @@
 		57680E112C6789D9000233B9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 86Y9L37F45;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
@@ -713,9 +725,9 @@
 		57680E122C6789D9000233B9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 86Y9L37F45;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;

@@ -5,27 +5,119 @@
 
 import SwiftUI
 
-struct ChatMessage: Identifiable {
-    let id = UUID()
-    let text: String
-    let isUser: Bool
-    let cat: String?
-    let timestamp: Date = Date()
+// MARK: - Chat Message Model
 
-    // Gamification metadata
+struct ChatMessage: Identifiable, Codable {
+    var id: UUID
+    var text: String
+    var isUser: Bool
+    var cat: String?
+    var timestamp: Date
     var xpEarned: Int?
     var difficultyBadge: String?
     var cognitiveLoad: Int?
-    var isAIPowered: Bool = false
+    var isAIPowered: Bool
+
+    init(
+        text: String,
+        isUser: Bool,
+        cat: String?,
+        xpEarned: Int? = nil,
+        difficultyBadge: String? = nil,
+        cognitiveLoad: Int? = nil,
+        isAIPowered: Bool = false
+    ) {
+        self.id = UUID()
+        self.text = text
+        self.isUser = isUser
+        self.cat = cat
+        self.timestamp = Date()
+        self.xpEarned = xpEarned
+        self.difficultyBadge = difficultyBadge
+        self.cognitiveLoad = cognitiveLoad
+        self.isAIPowered = isAIPowered
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, text, isUser, cat, timestamp
+        case xpEarned, difficultyBadge, cognitiveLoad, isAIPowered
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        text = try container.decode(String.self, forKey: .text)
+        isUser = try container.decode(Bool.self, forKey: .isUser)
+        cat = try container.decodeIfPresent(String.self, forKey: .cat)
+        timestamp = try container.decodeIfPresent(Date.self, forKey: .timestamp) ?? Date()
+        xpEarned = try container.decodeIfPresent(Int.self, forKey: .xpEarned)
+        difficultyBadge = try container.decodeIfPresent(String.self, forKey: .difficultyBadge)
+        cognitiveLoad = try container.decodeIfPresent(Int.self, forKey: .cognitiveLoad)
+        isAIPowered = try container.decodeIfPresent(Bool.self, forKey: .isAIPowered) ?? false
+    }
 }
+
+// MARK: - Chat History Store (persistent)
+
+class ChatHistoryStore: ObservableObject {
+    static let shared = ChatHistoryStore()
+
+    @Published var messages: [ChatMessage] = []
+
+    private let storageKey = "cats_chat_history"
+    private let maxMessages = 200
+
+    private init() {
+        loadMessages()
+    }
+
+    func addMessage(_ message: ChatMessage) {
+        messages.append(message)
+        trimIfNeeded()
+        saveMessages()
+    }
+
+    func clearHistory() {
+        messages.removeAll()
+        saveMessages()
+    }
+
+    /// Recent conversation formatted for LLM multi-turn context
+    var recentHistoryForLLM: [(role: String, content: String)] {
+        messages.suffix(10).map { msg in
+            (msg.isUser ? "user" : "assistant", msg.text)
+        }
+    }
+
+    private func trimIfNeeded() {
+        if messages.count > maxMessages {
+            messages = Array(messages.suffix(maxMessages))
+        }
+    }
+
+    private func loadMessages() {
+        guard let data = UserDefaults.standard.data(forKey: storageKey),
+              let decoded = try? JSONDecoder().decode([ChatMessage].self, from: data)
+        else { return }
+        messages = decoded
+    }
+
+    private func saveMessages() {
+        guard let data = try? JSONEncoder().encode(messages) else { return }
+        UserDefaults.standard.set(data, forKey: storageKey)
+    }
+}
+
+// MARK: - Chat Input View
 
 struct ChatInputView: View {
     @ObservedObject var taskStore: TaskStore
     @ObservedObject var profile: CognitiveProfile
     @ObservedObject var calendarManager: CalendarManager
 
+    @ObservedObject private var chatHistory = ChatHistoryStore.shared
+
     @State private var inputText: String = ""
-    @State private var messages: [ChatMessage] = []
     @State private var isThinking = false
     @State private var lastXPGain: Int = 0
     @State private var showXPPopup = false
@@ -42,10 +134,10 @@ struct ChatInputView: View {
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: true) {
                     VStack(spacing: 6) {
-                        if messages.isEmpty {
+                        if chatHistory.messages.isEmpty {
                             welcomeMessage
                         }
-                        ForEach(messages) { msg in
+                        ForEach(chatHistory.messages) { msg in
                             messageBubble(msg)
                                 .id(msg.id)
                         }
@@ -56,15 +148,15 @@ struct ChatInputView: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 6)
                 }
-                .onChange(of: messages.count) {
-                    if let last = messages.last {
+                .onChange(of: chatHistory.messages.count) {
+                    if let last = chatHistory.messages.last {
                         withAnimation {
                             proxy.scrollTo(last.id, anchor: .bottom)
                         }
                     }
                 }
                 .onChange(of: isThinking) {
-                    if let last = messages.last {
+                    if let last = chatHistory.messages.last {
                         withAnimation {
                             proxy.scrollTo(last.id, anchor: .bottom)
                         }
@@ -123,6 +215,17 @@ struct ChatInputView: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 12, design: .rounded))
                     .onSubmit { sendMessage() }
+
+                // Clear chat history button
+                if !chatHistory.messages.isEmpty {
+                    Button(action: { chatHistory.clearHistory() }) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary.opacity(0.6))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Clear chat history")
+                }
 
                 Button(action: sendMessage) {
                     Image(systemName: "arrow.up.circle.fill")
@@ -434,7 +537,7 @@ struct ChatInputView: View {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
 
-        messages.append(ChatMessage(text: text, isUser: true, cat: nil))
+        chatHistory.addMessage(ChatMessage(text: text, isUser: true, cat: nil))
         inputText = ""
         errorMessage = nil
 
@@ -445,8 +548,13 @@ struct ChatInputView: View {
         }
     }
 
+    // MARK: - LLM-Powered Send (with conversation history)
+
     private func sendWithLLM(_ text: String) {
         isThinking = true
+
+        // Capture recent history for multi-turn context
+        let history = chatHistory.recentHistoryForLLM
 
         Task {
             do {
@@ -456,7 +564,8 @@ struct ChatInputView: View {
                     peakHour: profile.isPeakHour,
                     existingTasks: taskStore.activeTasks,
                     streak: profile.currentStreak,
-                    level: profile.currentLevel.name
+                    level: profile.currentLevel.name,
+                    conversationHistory: history
                 )
 
                 await MainActor.run {
@@ -512,7 +621,7 @@ struct ChatInputView: View {
                         lines.append("Deadline: \(fmt.string(from: deadline))")
                         lines.append("Est. \(response.estimatedMinutes ?? 60) min of \(category.rawValue.lowercased())")
 
-                        messages.append(ChatMessage(
+                        chatHistory.addMessage(ChatMessage(
                             text: lines.joined(separator: "\n"),
                             isUser: false,
                             cat: cat,
@@ -534,7 +643,7 @@ struct ChatInputView: View {
                         // Low energy warning
                         if profile.currentEnergy < 40 && cogLoad >= 7 {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                messages.append(ChatMessage(
+                                chatHistory.addMessage(ChatMessage(
                                     text: "Heads up — your mental bandwidth is low (\(Int(profile.currentEnergy))%). This is a heavy task. Consider recharging first or tackling lighter work.",
                                     isUser: false,
                                     cat: CatFaces.stressed.randomElement()
@@ -544,7 +653,7 @@ struct ChatInputView: View {
                     } else {
                         // It's a conversation — just reply
                         let cat = CatFaces.happy.randomElement()!
-                        messages.append(ChatMessage(
+                        chatHistory.addMessage(ChatMessage(
                             text: response.reply,
                             isUser: false,
                             cat: cat,
@@ -555,71 +664,221 @@ struct ChatInputView: View {
             } catch {
                 await MainActor.run {
                     isThinking = false
-                    errorMessage = error.localizedDescription
-                    // Fall back to keyword parser for task-like inputs
+                    errorMessage = "LLM unavailable — using offline mode. \(error.localizedDescription)"
+                    // Fall back to keyword parser + hardcoded responses
                     sendWithFallback(text)
                 }
             }
         }
     }
 
+    // MARK: - Fallback (offline mode with intent detection)
+
     private func sendWithFallback(_ text: String) {
-        let parsed = CognitiveEngine.shared.parseNaturalLanguage(text)
-        let task = CATSTask(
-            title: parsed.title,
-            deadline: parsed.deadline,
-            cognitiveLoad: parsed.cognitiveLoad,
-            estimatedMinutes: parsed.estimatedMinutes,
-            category: parsed.category
-        )
-        taskStore.addTask(task)
+        let intent = detectLocalIntent(text)
 
-        if calendarManager.isAuthorized {
-            if let eventID = calendarManager.writeDeadlineToCalendar(for: task) {
-                var updated = task
-                updated.calendarEventID = eventID
-                taskStore.updateTask(updated)
-            }
-        }
+        if intent == "task" {
+            // Task creation via CognitiveEngine keyword parsing + time extraction
+            let parsed = CognitiveEngine.shared.parseNaturalLanguage(text)
+            let task = CATSTask(
+                title: parsed.title,
+                deadline: parsed.deadline,
+                cognitiveLoad: parsed.cognitiveLoad,
+                estimatedMinutes: parsed.estimatedMinutes,
+                category: parsed.category
+            )
+            taskStore.addTask(task)
 
-        let cat = CatFaces.happy.randomElement()!
-        let loadDesc = loadDescription(parsed.cognitiveLoad)
-        let fmt = DateFormatter()
-        fmt.dateFormat = "MMM d, h:mm a"
-        let xpEstimate = parsed.cognitiveLoad * parsed.estimatedMinutes / 10
-
-        let response = """
-            Added "\(parsed.title)"!
-            Cognitive load: \(parsed.cognitiveLoad)/10 (\(loadDesc))
-            Deadline: \(fmt.string(from: parsed.deadline))
-            Est. \(parsed.estimatedMinutes) min of \(parsed.category.rawValue.lowercased())
-            """
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            messages.append(ChatMessage(
-                text: response,
-                isUser: false,
-                cat: cat,
-                xpEarned: xpEstimate,
-                cognitiveLoad: parsed.cognitiveLoad
-            ))
-
-            if profile.currentEnergy < 40 && parsed.cognitiveLoad >= 7 {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    messages.append(ChatMessage(
-                        text: "Heads up — energy low (\(Int(profile.currentEnergy))%). Consider peak hours or a break first.",
-                        isUser: false,
-                        cat: CatFaces.stressed.randomElement()
-                    ))
+            if calendarManager.isAuthorized {
+                if let eventID = calendarManager.writeDeadlineToCalendar(for: task) {
+                    var updated = task
+                    updated.calendarEventID = eventID
+                    taskStore.updateTask(updated)
                 }
+            }
+
+            let cat = CatFaces.happy.randomElement()!
+            let loadDesc = loadDescription(parsed.cognitiveLoad)
+            let fmt = DateFormatter()
+            fmt.dateFormat = "MMM d, h:mm a"
+            let xpEstimate = parsed.cognitiveLoad * parsed.estimatedMinutes / 10
+
+            let response = """
+                Added "\(parsed.title)"!
+                Cognitive load: \(parsed.cognitiveLoad)/10 (\(loadDesc))
+                Deadline: \(fmt.string(from: parsed.deadline))
+                Est. \(parsed.estimatedMinutes) min of \(parsed.category.rawValue.lowercased())
+                """
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                chatHistory.addMessage(ChatMessage(
+                    text: response,
+                    isUser: false,
+                    cat: cat,
+                    xpEarned: xpEstimate,
+                    cognitiveLoad: parsed.cognitiveLoad
+                ))
+
+                if profile.currentEnergy < 40 && parsed.cognitiveLoad >= 7 {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        chatHistory.addMessage(ChatMessage(
+                            text: "Heads up — energy low (\(Int(profile.currentEnergy))%). Consider peak hours or a break first.",
+                            isUser: false,
+                            cat: CatFaces.stressed.randomElement()
+                        ))
+                    }
+                }
+            }
+        } else {
+            // Conversational fallback with hardcoded + time-aware responses
+            let response = generateFallbackChatResponse(text)
+            let cat = CatFaces.happy.randomElement()!
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                chatHistory.addMessage(ChatMessage(
+                    text: response,
+                    isUser: false,
+                    cat: cat
+                ))
             }
         }
     }
 
+    // MARK: - Local Intent Detection (for fallback when LLM unavailable)
+
+    private func detectLocalIntent(_ text: String) -> String {
+        let lower = text.lowercased()
+
+        // Task-like prefixes
+        let taskPrefixes = [
+            "i need to ", "i have to ", "i want to ", "i should ",
+            "need to ", "have to ", "want to ", "gotta ",
+            "finish ", "complete ", "work on ", "study ",
+            "prepare ", "submit ", "practice ", "start ",
+        ]
+        for prefix in taskPrefixes {
+            if lower.hasPrefix(prefix) { return "task" }
+        }
+
+        // Task-like keywords
+        let taskKeywords = [
+            "deadline", "due date", "assignment", "homework", "project",
+            "exam prep", "quiz prep", "lab report", "problem set",
+            "by tomorrow", "by friday", "by monday", "by tuesday",
+            "by wednesday", "by thursday", "by saturday", "by sunday",
+            "by end of day", "by eod", "by tonight",
+        ]
+        for keyword in taskKeywords {
+            if lower.contains(keyword) { return "task" }
+        }
+
+        // Action + subject pattern
+        let actionPrefixes = [
+            "do ", "make ", "create ", "build ", "implement ", "solve ",
+            "debug ", "fix ", "read ", "review ", "write ", "edit ",
+        ]
+        for prefix in actionPrefixes {
+            if lower.hasPrefix(prefix) { return "task" }
+        }
+
+        return "chat"
+    }
+
+    // MARK: - Hardcoded Chat Responses (time-aware fallback)
+
+    private func generateFallbackChatResponse(_ text: String) -> String {
+        let lower = text.lowercased()
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "h:mm a"
+        let currentTime = timeFormatter.string(from: Date())
+
+        let hourFormatter = DateFormatter()
+        hourFormatter.dateFormat = "HH"
+        let currentHour = Int(hourFormatter.string(from: Date())) ?? 12
+
+        let timeOfDay: String = {
+            switch currentHour {
+            case 5..<12: return "morning"
+            case 12..<17: return "afternoon"
+            case 17..<21: return "evening"
+            default: return "night"
+            }
+        }()
+
+        // Greeting
+        if lower.contains("hello") || lower.hasPrefix("hi") || lower.contains("hey") || lower.contains("good morning") || lower.contains("good afternoon") || lower.contains("good evening") {
+            return "Hey there! Good \(timeOfDay)! It's \(currentTime) and your energy is at \(Int(profile.currentEnergy))%. \(profile.isPeakHour ? "You're in peak hours — great time for deep work!" : "What would you like to work on?")"
+        }
+
+        // How are you / what's up
+        if lower.contains("how are you") || lower.contains("what's up") || lower.contains("sup") || lower.contains("how's it going") {
+            return "Purring along nicely this \(timeOfDay)! It's \(currentTime) — \(profile.isPeakHour ? "you're in your peak hours, purrfect for deep work!" : "off-peak time, good for lighter tasks.") What can I help with?"
+        }
+
+        // Help / capabilities
+        if lower.contains("help") || lower.contains("what can you do") || lower.contains("how do you work") || lower.contains("features") {
+            return "I help you manage tasks with cognitive load awareness! Tell me something like 'I need to study calculus by Friday' and I'll track it with difficulty ratings, deadlines, and XP. I also monitor your energy and suggest optimal work times."
+        }
+
+        // Thanks
+        if lower.contains("thank") || lower.contains("thanks") || lower.contains("thx") {
+            return "You're welcome! Keep that streak going — \(profile.currentStreak) days strong! It's \(currentTime), \(profile.currentEnergy > 60 ? "and you've got plenty of energy left." : "remember to take care of yourself too.")"
+        }
+
+        // Time-related queries
+        if lower.contains("what time") || lower.contains("current time") || lower.contains("time is it") {
+            return "It's \(currentTime) (\(timeOfDay)). \(profile.isPeakHour ? "You're in peak cognitive hours — great time to tackle hard tasks!" : "Off-peak right now. Consider lighter work or taking a break.")"
+        }
+
+        // Energy / status queries
+        if lower.contains("energy") || lower.contains("how am i doing") || lower.contains("my status") || lower.contains("my stats") || lower.contains("my level") {
+            let taskCount = taskStore.activeTasks.count
+            return "Here's your status at \(currentTime):\nEnergy: \(Int(profile.currentEnergy))% | Streak: \(profile.currentStreak) days | Level: \(profile.currentLevel.name) | Active tasks: \(taskCount)\n\(profile.currentEnergy > 60 ? "You're doing great!" : "Take it easy — your energy is running low.")"
+        }
+
+        // Schedule advice / what should I do
+        if lower.contains("what should i") || lower.contains("suggest") || lower.contains("recommend") || lower.contains("advice") || lower.contains("what next") || lower.contains("what now") {
+            if taskStore.activeTasks.isEmpty {
+                return "You don't have any active tasks right now! Tell me what you need to work on and I'll help you plan. It's \(currentTime) — \(profile.isPeakHour ? "prime time for challenging work." : "a good time to plan ahead.")"
+            }
+            let sorted = CognitiveEngine.shared.suggestSchedule(tasks: taskStore.activeTasks, profile: profile)
+            if let top = sorted.first {
+                let urgencyNote = top.isUrgent ? " (urgent!)" : ""
+                return "At \(currentTime) with \(Int(profile.currentEnergy))% energy, I'd suggest working on \"\(top.title)\" (load: \(top.cognitiveLoad)/10)\(urgencyNote). \(profile.isPeakHour ? "It's peak hour — great time for it!" : "Take it at your own pace.")"
+            }
+            return "Based on your energy (\(Int(profile.currentEnergy))%) at \(currentTime), I'd suggest \(profile.currentEnergy > 60 ? "tackling your hardest task" : "starting with something light")."
+        }
+
+        // Identity / model
+        if lower.contains("what model") || lower.contains("what are you") || lower.contains("who are you") || lower.contains("your name") {
+            return "I'm CATS — Cognitive-Aware Task Scheduler! I'm currently in offline mode, using built-in smarts for task management. Add an API key in Settings for full AI-powered conversations!"
+        }
+
+        // Peak hours
+        if lower.contains("peak hour") || lower.contains("best time") || lower.contains("when should") {
+            return "Right now it's \(currentTime). \(profile.isPeakHour ? "You're in your peak cognitive hours! This is the best time for demanding work." : "You're off-peak right now. Peak hours are typically morning (9-11 AM) — save your hardest tasks for then.")"
+        }
+
+        // Break
+        if lower.contains("break") || lower.contains("tired") || lower.contains("exhausted") || lower.contains("rest") {
+            return "Taking breaks is smart, not lazy! Your energy is at \(Int(profile.currentEnergy))%. \(profile.currentEnergy < 40 ? "You definitely need one — step away for 10-15 minutes." : "A quick 5-minute stretch can boost focus. You've got this!")"
+        }
+
+        // Bye
+        if lower.contains("bye") || lower.contains("goodbye") || lower.contains("see you") || lower.contains("later") {
+            return "See you later! It's \(currentTime) — \(taskStore.activeTasks.isEmpty ? "enjoy your free time!" : "you have \(taskStore.activeTasks.count) task(s) waiting. Come back when you're ready!") Keep that streak alive!"
+        }
+
+        // Default
+        return "I'm in offline mode right now (\(currentTime)). I work best with task management — try telling me about a task like 'Study algorithms by Friday'! For full AI chat, add an API key in Settings."
+    }
+
+    // MARK: - Schedule Advice
+
     private func getScheduleAdvice() {
         isThinking = true
 
-        messages.append(ChatMessage(
+        chatHistory.addMessage(ChatMessage(
             text: "What should I work on right now?",
             isUser: true,
             cat: nil
@@ -637,7 +896,7 @@ struct ChatInputView: View {
 
                 await MainActor.run {
                     isThinking = false
-                    messages.append(ChatMessage(
+                    chatHistory.addMessage(ChatMessage(
                         text: advice,
                         isUser: false,
                         cat: CatFaces.focused.randomElement(),
@@ -647,8 +906,27 @@ struct ChatInputView: View {
             } catch {
                 await MainActor.run {
                     isThinking = false
-                    messages.append(ChatMessage(
-                        text: "Based on your energy (\(Int(profile.currentEnergy))%), I'd suggest \(profile.currentEnergy > 60 ? "tackling your hardest task" : "starting with something light").",
+                    // Fallback to local schedule advice
+                    let sorted = CognitiveEngine.shared.suggestSchedule(
+                        tasks: taskStore.activeTasks,
+                        profile: profile
+                    )
+                    let timeFormatter = DateFormatter()
+                    timeFormatter.dateFormat = "h:mm a"
+                    let currentTime = timeFormatter.string(from: Date())
+
+                    let advice: String
+                    if let top = sorted.first {
+                        let energyAdvice = profile.currentEnergy > 60
+                            ? "Your energy is solid at \(Int(profile.currentEnergy))% — go for it!"
+                            : "Energy is at \(Int(profile.currentEnergy))%, so pace yourself."
+                        advice = "At \(currentTime), I'd suggest working on \"\(top.title)\" (load: \(top.cognitiveLoad)/10). \(energyAdvice)\(profile.isPeakHour ? " It's peak hour!" : "")"
+                    } else {
+                        advice = "Based on your energy (\(Int(profile.currentEnergy))%) at \(currentTime), I'd suggest \(profile.currentEnergy > 60 ? "tackling your hardest task" : "starting with something light")."
+                    }
+
+                    chatHistory.addMessage(ChatMessage(
+                        text: advice,
                         isUser: false,
                         cat: CatFaces.focused.randomElement()
                     ))
@@ -657,10 +935,12 @@ struct ChatInputView: View {
         }
     }
 
+    // MARK: - Calendar Import
+
     private func importFromCalendar() {
         if !calendarManager.isAuthorized {
             calendarManager.requestAccess()
-            messages.append(ChatMessage(
+            chatHistory.addMessage(ChatMessage(
                 text: "Requesting calendar access...",
                 isUser: false,
                 cat: CatFaces.focused.randomElement()!
@@ -668,13 +948,15 @@ struct ChatInputView: View {
         } else {
             calendarManager.importDeadlinesAsTasks(into: taskStore)
             let count = calendarManager.calendarEvents.count
-            messages.append(ChatMessage(
+            chatHistory.addMessage(ChatMessage(
                 text: "Scanned \(count) upcoming calendar events and imported relevant deadlines!",
                 isUser: false,
                 cat: CatFaces.happy.randomElement()!
             ))
         }
     }
+
+    // MARK: - Helpers
 
     private func loadDescription(_ load: Int) -> String {
         switch load {

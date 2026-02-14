@@ -23,6 +23,144 @@ struct LLMChatResponse: Codable {
     let xpPreview: Int?
     // Always present
     let reply: String
+
+    // MARK: - Memberwise init
+
+    init(
+        intent: String,
+        title: String?,
+        cognitiveLoad: Int?,
+        loadReasoning: String?,
+        estimatedMinutes: Int?,
+        category: String?,
+        deadlineDescription: String?,
+        difficultyBadge: String?,
+        xpPreview: Int?,
+        reply: String
+    ) {
+        self.intent = intent
+        self.title = title
+        self.cognitiveLoad = cognitiveLoad
+        self.loadReasoning = loadReasoning
+        self.estimatedMinutes = estimatedMinutes
+        self.category = category
+        self.deadlineDescription = deadlineDescription
+        self.difficultyBadge = difficultyBadge
+        self.xpPreview = xpPreview
+        self.reply = reply
+    }
+
+    // MARK: - Flexible Codable (handles LLM type mismatches)
+
+    enum CodingKeys: String, CodingKey {
+        case intent, title, cognitiveLoad, loadReasoning, estimatedMinutes
+        case category, deadlineDescription, difficultyBadge, xpPreview, reply
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        intent = (try? container.decode(String.self, forKey: .intent)) ?? "chat"
+        title = try? container.decode(String.self, forKey: .title)
+        cognitiveLoad = Self.decodeFlexibleInt(container: container, key: .cognitiveLoad)
+        loadReasoning = try? container.decode(String.self, forKey: .loadReasoning)
+        estimatedMinutes = Self.decodeFlexibleInt(container: container, key: .estimatedMinutes)
+        category = try? container.decode(String.self, forKey: .category)
+        deadlineDescription = try? container.decode(String.self, forKey: .deadlineDescription)
+        difficultyBadge = try? container.decode(String.self, forKey: .difficultyBadge)
+        xpPreview = Self.decodeFlexibleInt(container: container, key: .xpPreview)
+        reply = (try? container.decode(String.self, forKey: .reply)) ?? "Got it!"
+    }
+
+    /// Decode a field that should be Int but might be String (e.g. "15 XP") or Double
+    private static func decodeFlexibleInt(container: KeyedDecodingContainer<CodingKeys>, key: CodingKeys) -> Int? {
+        if let val = try? container.decode(Int.self, forKey: key) { return val }
+        if let val = try? container.decode(Double.self, forKey: key) { return Int(val) }
+        if let str = try? container.decode(String.self, forKey: key) {
+            return extractFirstInt(from: str)
+        }
+        return nil
+    }
+
+    /// Extract the first integer from a string like "15 XP" or "60 minutes"
+    private static func extractFirstInt(from string: String) -> Int? {
+        let parts = string.components(separatedBy: CharacterSet.decimalDigits.inverted)
+        for part in parts where !part.isEmpty {
+            if let i = Int(part) { return i }
+        }
+        return nil
+    }
+
+    // MARK: - Sanitize raw LLM JSON (fix common issues before parsing)
+
+    /// Fix invalid JSON patterns that LLMs commonly produce
+    static func sanitizeJSON(_ raw: String) -> String {
+        var s = raw
+
+        // Fix bare number ranges like 60-90 → 60 (outside of quoted strings)
+        // Pattern: colon, optional whitespace, digits, hyphen, digits (not inside quotes)
+        if let regex = try? NSRegularExpression(pattern: #"(?<=:\s{0,4})(\d+)\s*-\s*(\d+)(?=\s*[,\}\]])"#) {
+            let range = NSRange(s.startIndex..., in: s)
+            s = regex.stringByReplacingMatches(in: s, range: range, withTemplate: "$1")
+        }
+
+        // Fix trailing commas before } or ]
+        if let regex = try? NSRegularExpression(pattern: #",(\s*[\}\]])"#) {
+            let range = NSRange(s.startIndex..., in: s)
+            s = regex.stringByReplacingMatches(in: s, range: range, withTemplate: "$1")
+        }
+
+        return s
+    }
+
+    // MARK: - Manual parsing via JSONSerialization (most lenient)
+
+    /// Best-effort parse from a raw JSON string using JSONSerialization
+    static func parseManually(from raw: String) -> LLMChatResponse? {
+        let sanitized = sanitizeJSON(raw)
+        guard let data = sanitized.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return nil }
+
+        guard let reply = json["reply"] as? String else { return nil }
+
+        return LLMChatResponse(
+            intent: json["intent"] as? String ?? "chat",
+            title: json["title"] as? String,
+            cognitiveLoad: flexibleInt(json["cognitiveLoad"]),
+            loadReasoning: json["loadReasoning"] as? String,
+            estimatedMinutes: flexibleInt(json["estimatedMinutes"]),
+            category: json["category"] as? String,
+            deadlineDescription: json["deadlineDescription"] as? String,
+            difficultyBadge: json["difficultyBadge"] as? String,
+            xpPreview: flexibleInt(json["xpPreview"]),
+            reply: reply
+        )
+    }
+
+    /// Flexible int extraction from Any value
+    private static func flexibleInt(_ value: Any?) -> Int? {
+        if let i = value as? Int { return i }
+        if let d = value as? Double { return Int(d) }
+        if let s = value as? String { return extractFirstInt(from: s) }
+        return nil
+    }
+
+    // MARK: - Last-resort reply extraction via regex
+
+    /// Extract just the "reply" value from raw text even if JSON is totally broken
+    static func extractReplyFromRaw(_ raw: String) -> String? {
+        // Match "reply" : "..." handling escaped quotes inside
+        guard let regex = try? NSRegularExpression(
+            pattern: #""reply"\s*:\s*"((?:[^"\\]|\\.)*)""#
+        ) else { return nil }
+        let range = NSRange(raw.startIndex..., in: raw)
+        guard let match = regex.firstMatch(in: raw, range: range),
+              let captureRange = Range(match.range(at: 1), in: raw)
+        else { return nil }
+        return String(raw[captureRange])
+            .replacingOccurrences(of: #"\""#, with: "\"")
+            .replacingOccurrences(of: #"\n"#, with: "\n")
+    }
 }
 
 // MARK: - OpenRouter Service
@@ -30,12 +168,12 @@ struct LLMChatResponse: Codable {
 class OpenRouterService: ObservableObject {
     static let shared = OpenRouterService()
 
-    static let defaultModel = "stepfun/step-3.5-flash:free"
+    static let defaultModel = "liquid/lfm-2.2-6b"
 
     @PublishedPersist(key: "cats_openrouter_api_key2", defaultValue: "")
     var apiKey: String
 
-    @PublishedPersist(key: "cats_openrouter_model2", defaultValue: "stepfun/step-3.5-flash:free")
+    @PublishedPersist(key: "cats_openrouter_model2", defaultValue: "liquid/lfm-2.2-6b")
     var model: String
 
     @Published var isProcessing: Bool = false
@@ -55,15 +193,7 @@ class OpenRouterService: ObservableObject {
     private let baseURL = "https://openrouter.ai/api/v1/chat/completions"
 
     static let availableModels: [(id: String, name: String, tier: String)] = [
-        ("stepfun/step-3.5-flash:free", "Step 3.5 Flash", "Free"),
-        ("openai/gpt-4.1-nano", "GPT-4.1 Nano", "Fast"),
-        ("openai/gpt-4.1-mini", "GPT-4.1 Mini", "Balanced"),
-        ("openai/gpt-4.1", "GPT-4.1", "Smart"),
-        ("anthropic/claude-3.5-haiku", "Claude 3.5 Haiku", "Fast"),
-        ("anthropic/claude-3.7-sonnet", "Claude 3.7 Sonnet", "Smart"),
-        ("google/gemini-2.0-flash-001", "Gemini 2.0 Flash", "Fast"),
-        ("google/gemini-2.5-pro-preview", "Gemini 2.5 Pro", "Smart"),
-        ("deepseek/deepseek-chat-v3-0324", "DeepSeek V3", "Balanced"),
+        ("liquid/lfm-2.2-6b", "LFM 2.2 6B", "Default"),
     ]
 
     private init() {}
@@ -76,7 +206,8 @@ class OpenRouterService: ObservableObject {
         peakHour: Bool,
         existingTasks: [CATSTask],
         streak: Int,
-        level: String
+        level: String,
+        conversationHistory: [(role: String, content: String)] = []
     ) async throws -> LLMChatResponse {
         let taskContext = existingTasks.prefix(5).map { task in
             "- \(task.title) (load: \(task.cognitiveLoad)/10, due: \(task.timeRemainingFormatted))"
@@ -99,17 +230,19 @@ class OpenRouterService: ObservableObject {
             - If they're asking a QUESTION or CHATTING (e.g. "what model are you", "how are you", \
             "what should I do", "help", "thanks"), set intent to "chat" and just reply conversationally.
 
-            Respond ONLY with valid JSON (no markdown, no code fences):
+            Respond ONLY with valid JSON (no markdown, no code fences).
+            IMPORTANT: All number fields MUST be a single integer, NOT a range. For example \
+            write 60, not 60-90. String fields must be quoted strings. Follow this exact schema:
             {
               "intent": "task" or "chat",
               "title": "Task title" or null,
-              "cognitiveLoad": 1-10 or null,
+              "cognitiveLoad": 7,
               "loadReasoning": "Why this load rating" or null,
-              "estimatedMinutes": 30-120 or null,
-              "category": "deepWork|lightWork|review|creative" or null,
-              "deadlineDescription": "today|tomorrow|by friday|etc" or null,
+              "estimatedMinutes": 60,
+              "category": "deepWork" or "lightWork" or "review" or "creative" or null,
+              "deadlineDescription": "today" or "tomorrow" or "by friday" or null,
               "difficultyBadge": "Fun 2-3 word badge" or null,
-              "xpPreview": estimated_xp or null,
+              "xpPreview": 15,
               "reply": "Your response message to the user (ALWAYS required, keep it short and fun)"
             }
 
@@ -118,31 +251,53 @@ class OpenRouterService: ObservableObject {
             For task intent: the reply should confirm the task was added with encouragement.
             """
 
-        let response = try await sendRequest(
-            systemPrompt: systemPrompt,
-            userMessage: input,
+        // Build multi-turn messages with conversation history
+        var messages: [(role: String, content: String)] = [
+            ("system", systemPrompt),
+        ]
+
+        // Append recent conversation history for context (last 10 turns)
+        let recentHistory = Array(conversationHistory.suffix(10))
+        messages.append(contentsOf: recentHistory)
+
+        // Append current user message
+        messages.append(("user", input))
+
+        let raw = try await sendRequestWithMessages(
+            messages: messages,
             maxTokens: 500
         )
 
-        guard let data = response.data(using: .utf8),
-              let parsed = try? JSONDecoder().decode(LLMChatResponse.self, from: data)
-        else {
-            // If JSON parsing fails, treat raw text as a chat response
-            return LLMChatResponse(
-                intent: "chat",
-                title: nil,
-                cognitiveLoad: nil,
-                loadReasoning: nil,
-                estimatedMinutes: nil,
-                category: nil,
-                deadlineDescription: nil,
-                difficultyBadge: nil,
-                xpPreview: nil,
-                reply: response
-            )
+        // Layer 1: Try standard JSONDecoder on sanitized JSON
+        let sanitized = LLMChatResponse.sanitizeJSON(raw)
+        if let data = sanitized.data(using: .utf8),
+           let parsed = try? JSONDecoder().decode(LLMChatResponse.self, from: data)
+        {
+            return parsed
         }
 
-        return parsed
+        // Layer 2: Try manual parsing via JSONSerialization (handles type mismatches)
+        if let parsed = LLMChatResponse.parseManually(from: raw) {
+            return parsed
+        }
+
+        // Layer 3: Extract just the reply field via regex (totally broken JSON)
+        let fallbackReply = LLMChatResponse.extractReplyFromRaw(raw) ?? raw
+
+        // If the fallback reply IS the raw JSON, don't show it — give a clean message
+        let isRawJSON = fallbackReply.trimmingCharacters(in: .whitespaces).hasPrefix("{")
+        return LLMChatResponse(
+            intent: "chat",
+            title: nil,
+            cognitiveLoad: nil,
+            loadReasoning: nil,
+            estimatedMinutes: nil,
+            category: nil,
+            deadlineDescription: nil,
+            difficultyBadge: nil,
+            xpPreview: nil,
+            reply: isRawJSON ? "I understood your request, but had trouble formatting my response. Please try again!" : fallbackReply
+        )
     }
 
     // MARK: - Schedule Advice via LLM
