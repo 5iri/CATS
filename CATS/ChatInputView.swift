@@ -548,125 +548,212 @@ struct ChatInputView: View {
         }
     }
 
-    // MARK: - LLM-Powered Send (with conversation history)
+    // MARK: - LLM-Powered Send (CognitiveEngine is backbone, LLM enhances)
 
     private func sendWithLLM(_ text: String) {
         isThinking = true
 
-        // Capture recent history for multi-turn context
+        // Step 1: ALWAYS detect intent locally first — this is the source of truth
+        let localIntent = detectLocalIntent(text)
+
+        // Step 2: If it's a task, parse it locally RIGHT NOW (guaranteed to work)
+        let localParsed = localIntent == "task"
+            ? CognitiveEngine.shared.parseNaturalLanguage(text) : nil
+
+        // Step 3: Ask LLM for enhancement (better reply, maybe better title)
         let history = chatHistory.recentHistoryForLLM
 
+        // Build calendar context
+        let calEvents: [String] = calendarManager.calendarEvents.prefix(5).map { event in
+            let fmt = DateFormatter()
+            fmt.dateFormat = "MMM d h:mm a"
+            return "\(event.title ?? "Event") (\(fmt.string(from: event.startDate)))"
+        }
+        let range = profile.optimalLoadRange
+
         Task {
+            // Try to get LLM response, but don't depend on it
+            var llmResponse: LLMChatResponse?
             do {
-                let response = try await llm.sendChat(
+                llmResponse = try await llm.sendChat(
                     text,
                     energy: profile.currentEnergy,
                     peakHour: profile.isPeakHour,
                     existingTasks: taskStore.activeTasks,
                     streak: profile.currentStreak,
                     level: profile.currentLevel.name,
-                    conversationHistory: history
+                    conversationHistory: history,
+                    calendarEvents: calEvents,
+                    fatigueSequence: profile.isFatigueSequence,
+                    optimalLoadRange: "\(range.lowerBound)-\(range.upperBound)"
                 )
+            } catch {
+                // LLM failed — that's fine, we have local fallback
+                await MainActor.run { errorMessage = nil }
+            }
 
-                await MainActor.run {
-                    isThinking = false
+            await MainActor.run {
+                isThinking = false
 
-                    if response.intent == "task",
-                       let title = response.title,
-                       let cogLoad = response.cognitiveLoad
-                    {
-                        // It's a task — create it
-                        let deadline = CognitiveEngine.shared.extractDeadline(
-                            (response.deadlineDescription ?? "today").lowercased()
-                        )
-                        let category: TaskCategory
-                        switch (response.category ?? "").lowercased() {
+                if localIntent == "task", let parsed = localParsed {
+                    // --- TASK PATH: Always create the task via CognitiveEngine ---
+                    // LLM can enhance title, cognitive load, and reply — but task ALWAYS gets created
+
+                    let title = llmResponse?.title ?? parsed.title
+                    let cogLoad = max(1, min(10, llmResponse?.cognitiveLoad ?? parsed.cognitiveLoad))
+                    let minutes = llmResponse?.estimatedMinutes ?? parsed.estimatedMinutes
+
+                    let deadline: Date
+                    if let llmDeadline = llmResponse?.deadlineDescription {
+                        deadline = CognitiveEngine.shared.extractDeadline(llmDeadline.lowercased())
+                    } else {
+                        deadline = parsed.deadline
+                    }
+
+                    let category: TaskCategory
+                    if let llmCat = llmResponse?.category?.lowercased() {
+                        switch llmCat {
                         case "deepwork", "deep work": category = .deepWork
                         case "lightwork", "light work": category = .lightWork
                         case "review": category = .review
                         case "creative": category = .creative
-                        default: category = CognitiveEngine.shared.inferCategory(cogLoad, text: text.lowercased())
-                        }
-
-                        let task = CATSTask(
-                            title: title,
-                            deadline: deadline,
-                            cognitiveLoad: max(1, min(10, cogLoad)),
-                            estimatedMinutes: response.estimatedMinutes ?? 60,
-                            category: category
-                        )
-                        taskStore.addTask(task)
-
-                        // Calendar sync
-                        if calendarManager.isAuthorized {
-                            if let eventID = calendarManager.writeDeadlineToCalendar(for: task) {
-                                var updated = task
-                                updated.calendarEventID = eventID
-                                taskStore.updateTask(updated)
-                            }
-                        }
-
-                        // Build task confirmation message
-                        let cat = CatFaces.happy.randomElement()!
-                        let loadDesc = loadDescription(cogLoad)
-                        let fmt = DateFormatter()
-                        fmt.dateFormat = "MMM d, h:mm a"
-
-                        var lines: [String] = [response.reply]
-                        lines.append("")
-                        lines.append("Cognitive load: \(cogLoad)/10 (\(loadDesc))")
-                        if let reasoning = response.loadReasoning {
-                            lines.append("  \(reasoning)")
-                        }
-                        lines.append("Deadline: \(fmt.string(from: deadline))")
-                        lines.append("Est. \(response.estimatedMinutes ?? 60) min of \(category.rawValue.lowercased())")
-
-                        chatHistory.addMessage(ChatMessage(
-                            text: lines.joined(separator: "\n"),
-                            isUser: false,
-                            cat: cat,
-                            xpEarned: response.xpPreview,
-                            difficultyBadge: response.difficultyBadge,
-                            cognitiveLoad: cogLoad,
-                            isAIPowered: true
-                        ))
-
-                        // XP popup
-                        if let xp = response.xpPreview, xp > 0 {
-                            lastXPGain = xp
-                            withAnimation(.spring(duration: 0.4)) { showXPPopup = true }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                                withAnimation { showXPPopup = false }
-                            }
-                        }
-
-                        // Low energy warning
-                        if profile.currentEnergy < 40 && cogLoad >= 7 {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                chatHistory.addMessage(ChatMessage(
-                                    text: "Heads up — your mental bandwidth is low (\(Int(profile.currentEnergy))%). This is a heavy task. Consider recharging first or tackling lighter work.",
-                                    isUser: false,
-                                    cat: CatFaces.stressed.randomElement()
-                                ))
-                            }
+                        default: category = parsed.category
                         }
                     } else {
-                        // It's a conversation — just reply
-                        let cat = CatFaces.happy.randomElement()!
-                        chatHistory.addMessage(ChatMessage(
-                            text: response.reply,
-                            isUser: false,
-                            cat: cat,
-                            isAIPowered: true
-                        ))
+                        category = parsed.category
                     }
-                }
-            } catch {
-                await MainActor.run {
-                    isThinking = false
-                    errorMessage = "LLM unavailable — using offline mode. \(error.localizedDescription)"
-                    // Fall back to keyword parser + hardcoded responses
-                    sendWithFallback(text)
+
+                    let task = CATSTask(
+                        title: title,
+                        deadline: deadline,
+                        cognitiveLoad: cogLoad,
+                        estimatedMinutes: minutes,
+                        category: category
+                    )
+                    taskStore.addTask(task)
+
+                    // Calendar sync
+                    if calendarManager.isAuthorized {
+                        if let eventID = calendarManager.writeDeadlineToCalendar(for: task) {
+                            var updated = task
+                            updated.calendarEventID = eventID
+                            taskStore.updateTask(updated)
+                        }
+                    }
+
+                    // Build confirmation message
+                    let cat = CatFaces.happy.randomElement()!
+                    let loadDesc = loadDescription(cogLoad)
+                    let fmt = DateFormatter()
+                    fmt.dateFormat = "MMM d, h:mm a"
+                    let xpEstimate = llmResponse?.xpPreview ?? (cogLoad * minutes / 10)
+                    let isAI = llmResponse != nil
+
+                    let replyText = llmResponse?.reply ?? "Added \"\(title)\"!"
+                    var lines: [String] = [replyText]
+                    lines.append("")
+                    lines.append("Cognitive load: \(cogLoad)/10 (\(loadDesc))")
+                    if let reasoning = llmResponse?.loadReasoning {
+                        lines.append("  \(reasoning)")
+                    }
+                    lines.append("Deadline: \(fmt.string(from: deadline))")
+                    lines.append("Est. \(minutes) min of \(category.rawValue.lowercased())")
+
+                    chatHistory.addMessage(ChatMessage(
+                        text: lines.joined(separator: "\n"),
+                        isUser: false,
+                        cat: cat,
+                        xpEarned: xpEstimate,
+                        difficultyBadge: llmResponse?.difficultyBadge,
+                        cognitiveLoad: cogLoad,
+                        isAIPowered: isAI
+                    ))
+
+                    // XP popup
+                    if xpEstimate > 0 {
+                        lastXPGain = xpEstimate
+                        withAnimation(.spring(duration: 0.4)) { showXPPopup = true }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                            withAnimation { showXPPopup = false }
+                        }
+                    }
+
+                    // Recovery cycle / energy warnings
+                    checkAndSuggestRecovery(afterTaskLoad: cogLoad)
+
+                } else if let response = llmResponse, response.intent == "task",
+                          let title = response.title,
+                          let cogLoad = response.cognitiveLoad
+                {
+                    // --- LLM detected task intent that local detector missed ---
+                    let deadline = CognitiveEngine.shared.extractDeadline(
+                        (response.deadlineDescription ?? "today").lowercased()
+                    )
+                    let category: TaskCategory
+                    switch (response.category ?? "").lowercased() {
+                    case "deepwork", "deep work": category = .deepWork
+                    case "lightwork", "light work": category = .lightWork
+                    case "review": category = .review
+                    case "creative": category = .creative
+                    default: category = CognitiveEngine.shared.inferCategory(cogLoad, text: text.lowercased())
+                    }
+
+                    let task = CATSTask(
+                        title: title,
+                        deadline: deadline,
+                        cognitiveLoad: max(1, min(10, cogLoad)),
+                        estimatedMinutes: response.estimatedMinutes ?? 60,
+                        category: category
+                    )
+                    taskStore.addTask(task)
+
+                    if calendarManager.isAuthorized {
+                        if let eventID = calendarManager.writeDeadlineToCalendar(for: task) {
+                            var updated = task
+                            updated.calendarEventID = eventID
+                            taskStore.updateTask(updated)
+                        }
+                    }
+
+                    let cat = CatFaces.happy.randomElement()!
+                    let loadDesc = loadDescription(cogLoad)
+                    let fmt = DateFormatter()
+                    fmt.dateFormat = "MMM d, h:mm a"
+                    let xpEstimate = response.xpPreview ?? (cogLoad * (response.estimatedMinutes ?? 60) / 10)
+
+                    var lines: [String] = [response.reply]
+                    lines.append("")
+                    lines.append("Cognitive load: \(cogLoad)/10 (\(loadDesc))")
+                    lines.append("Deadline: \(fmt.string(from: deadline))")
+                    lines.append("Est. \(response.estimatedMinutes ?? 60) min of \(category.rawValue.lowercased())")
+
+                    chatHistory.addMessage(ChatMessage(
+                        text: lines.joined(separator: "\n"),
+                        isUser: false,
+                        cat: cat,
+                        xpEarned: xpEstimate,
+                        cognitiveLoad: cogLoad,
+                        isAIPowered: true
+                    ))
+
+                } else {
+                    // --- CHAT PATH ---
+                    let replyText: String
+                    if let r = llmResponse?.reply,
+                       !r.trimmingCharacters(in: .whitespaces).hasPrefix("{")
+                    {
+                        replyText = r
+                    } else {
+                        replyText = generateFallbackChatResponse(text)
+                    }
+
+                    let cat = CatFaces.happy.randomElement()!
+                    chatHistory.addMessage(ChatMessage(
+                        text: replyText,
+                        isUser: false,
+                        cat: cat,
+                        isAIPowered: llmResponse != nil
+                    ))
                 }
             }
         }
@@ -719,15 +806,8 @@ struct ChatInputView: View {
                     cognitiveLoad: parsed.cognitiveLoad
                 ))
 
-                if profile.currentEnergy < 40 && parsed.cognitiveLoad >= 7 {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        chatHistory.addMessage(ChatMessage(
-                            text: "Heads up — energy low (\(Int(profile.currentEnergy))%). Consider peak hours or a break first.",
-                            isUser: false,
-                            cat: CatFaces.stressed.randomElement()
-                        ))
-                    }
-                }
+                // Recovery cycle / energy warnings
+                checkAndSuggestRecovery(afterTaskLoad: parsed.cognitiveLoad)
             }
         } else {
             // Conversational fallback with hardcoded + time-aware responses
@@ -836,6 +916,20 @@ struct ChatInputView: View {
             return "Here's your status at \(currentTime):\nEnergy: \(Int(profile.currentEnergy))% | Streak: \(profile.currentStreak) days | Level: \(profile.currentLevel.name) | Active tasks: \(taskCount)\n\(profile.currentEnergy > 60 ? "You're doing great!" : "Take it easy — your energy is running low.")"
         }
 
+        // Schedule request
+        if lower.contains("schedule") || lower.contains("plan my day") || lower.contains("plan my time") {
+            let busySlots = calendarManager.getBusySlots()
+            let schedule = CognitiveEngine.shared.generateDaySchedule(
+                tasks: taskStore.activeTasks,
+                profile: profile,
+                busySlots: busySlots
+            )
+            if !schedule.isEmpty {
+                return CognitiveEngine.shared.formatSchedule(schedule)
+            }
+            return "No tasks to schedule yet. Add some tasks first and I'll build a burnout-free plan!"
+        }
+
         // Schedule advice / what should I do
         if lower.contains("what should i") || lower.contains("suggest") || lower.contains("recommend") || lower.contains("advice") || lower.contains("what next") || lower.contains("what now") {
             if taskStore.activeTasks.isEmpty {
@@ -879,54 +973,55 @@ struct ChatInputView: View {
         isThinking = true
 
         chatHistory.addMessage(ChatMessage(
-            text: "What should I work on right now?",
+            text: "Generate my smart schedule",
             isUser: true,
             cat: nil
         ))
 
-        Task {
-            do {
-                let advice = try await llm.getScheduleAdvice(
-                    tasks: taskStore.activeTasks,
-                    energy: profile.currentEnergy,
-                    peakHour: profile.isPeakHour,
-                    fatigue: profile.fatigueAccumulator,
-                    deepWorkMinutes: profile.deepWorkMinutesToday
-                )
+        // Generate the intelligent schedule locally (instant, no LLM needed)
+        let busySlots = calendarManager.getBusySlots()
+        let schedule = CognitiveEngine.shared.generateDaySchedule(
+            tasks: taskStore.activeTasks,
+            profile: profile,
+            busySlots: busySlots
+        )
 
-                await MainActor.run {
-                    isThinking = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            isThinking = false
+
+            if schedule.isEmpty {
+                chatHistory.addMessage(ChatMessage(
+                    text: "No tasks to schedule right now. Add some tasks and I'll build you a burnout-free plan!",
+                    isUser: false,
+                    cat: CatFaces.happy.randomElement()
+                ))
+                return
+            }
+
+            // Show the schedule in chat
+            let formatted = CognitiveEngine.shared.formatSchedule(schedule)
+            chatHistory.addMessage(ChatMessage(
+                text: formatted,
+                isUser: false,
+                cat: CatFaces.focused.randomElement(),
+                isAIPowered: false
+            ))
+
+            // Write to calendar if authorized
+            if calendarManager.isAuthorized {
+                calendarManager.clearTodaySchedule()
+                let count = calendarManager.writeScheduleToCalendar(schedule)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     chatHistory.addMessage(ChatMessage(
-                        text: advice,
+                        text: "Synced \(count) blocks to your Apple Calendar! You'll get reminders before each session.",
                         isUser: false,
-                        cat: CatFaces.focused.randomElement(),
-                        isAIPowered: true
+                        cat: CatFaces.happy.randomElement()
                     ))
                 }
-            } catch {
-                await MainActor.run {
-                    isThinking = false
-                    // Fallback to local schedule advice
-                    let sorted = CognitiveEngine.shared.suggestSchedule(
-                        tasks: taskStore.activeTasks,
-                        profile: profile
-                    )
-                    let timeFormatter = DateFormatter()
-                    timeFormatter.dateFormat = "h:mm a"
-                    let currentTime = timeFormatter.string(from: Date())
-
-                    let advice: String
-                    if let top = sorted.first {
-                        let energyAdvice = profile.currentEnergy > 60
-                            ? "Your energy is solid at \(Int(profile.currentEnergy))% — go for it!"
-                            : "Energy is at \(Int(profile.currentEnergy))%, so pace yourself."
-                        advice = "At \(currentTime), I'd suggest working on \"\(top.title)\" (load: \(top.cognitiveLoad)/10). \(energyAdvice)\(profile.isPeakHour ? " It's peak hour!" : "")"
-                    } else {
-                        advice = "Based on your energy (\(Int(profile.currentEnergy))%) at \(currentTime), I'd suggest \(profile.currentEnergy > 60 ? "tackling your hardest task" : "starting with something light")."
-                    }
-
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     chatHistory.addMessage(ChatMessage(
-                        text: advice,
+                        text: "Tip: Grant calendar access in Settings to auto-sync your schedule with Apple Calendar!",
                         isUser: false,
                         cat: CatFaces.focused.randomElement()
                     ))
@@ -953,6 +1048,45 @@ struct ChatInputView: View {
                 isUser: false,
                 cat: CatFaces.happy.randomElement()!
             ))
+        }
+    }
+
+    // MARK: - Recovery Cycle Suggestions
+
+    private func checkAndSuggestRecovery(afterTaskLoad: Int) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            let cycle = profile.recoveryCycle
+
+            if cycle.needsBreak {
+                // Full recovery cycle suggestion
+                let activities = cycle.activities.prefix(3).joined(separator: "\n  - ")
+                let msg = """
+                    \(cycle.type.rawValue) recommended (\(cycle.minutes) min)
+                    \(cycle.message)
+
+                    Try:
+                      - \(activities)
+                    """
+                chatHistory.addMessage(ChatMessage(
+                    text: msg,
+                    isUser: false,
+                    cat: CatFaces.stressed.randomElement()
+                ))
+            } else if profile.currentEnergy < 40 && afterTaskLoad >= 7 {
+                // Simple low energy warning
+                chatHistory.addMessage(ChatMessage(
+                    text: "Heads up — energy at \(Int(profile.currentEnergy))%. This is a heavy task (load \(afterTaskLoad)/10). Consider a lighter task or break first.",
+                    isUser: false,
+                    cat: CatFaces.stressed.randomElement()
+                ))
+            } else if profile.consecutiveHighLoadTasks >= 1 && afterTaskLoad >= 7 {
+                // Building fatigue warning
+                chatHistory.addMessage(ChatMessage(
+                    text: "You're stacking heavy tasks (\(profile.consecutiveHighLoadTasks + 1) in a row). Consider mixing in a lighter task to maintain retention.",
+                    isUser: false,
+                    cat: CatFaces.focused.randomElement()
+                ))
+            }
         }
     }
 

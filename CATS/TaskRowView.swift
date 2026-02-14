@@ -9,10 +9,12 @@ import Pow
 struct TaskRowView: View {
     let task: CATSTask
     let currentTime: Date
+    var bandwidthMatch: Double = 0.5
+    var schedulingReason: String = ""
     let onComplete: () -> Void
     let onStart: () -> Void
     let onDelete: () -> Void
-    
+
     @State private var completionTrigger: Int = 0
     @State private var isCompleting: Bool = false
 
@@ -20,117 +22,161 @@ struct TaskRowView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            // Cognitive load ring
             cognitiveLoadRing
-
-            // Task info
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 5) {
-                    Text(task.title)
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .lineLimit(1)
-                        .strikethrough(task.status == .completed)
-                        .foregroundStyle(task.status == .completed ? .secondary : .primary)
-
-                    if task.status == .inProgress {
-                        Text("ACTIVE")
-                            .font(.system(size: 7, weight: .bold))
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1)
-                            .background(.blue.opacity(0.3))
-                            .clipShape(Capsule())
-                            .changeEffect(.shine, value: task.status)
-                    }
-
-                    // Difficulty badge
-                    Text(difficultyBadge)
-                        .font(.system(size: 7, weight: .bold, design: .rounded))
-                        .foregroundStyle(loadColor.opacity(0.9))
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
-                        .background(loadColor.opacity(0.12))
-                        .clipShape(Capsule())
-                }
-
-                HStack(spacing: 6) {
-                    Image(systemName: task.category.icon)
-                        .font(.system(size: 9))
-                        .foregroundStyle(.secondary)
-
-                    Text(task.category.rawValue)
-                        .font(.system(size: 9))
-                        .foregroundStyle(.secondary)
-
-                    Text("·")
-                        .foregroundStyle(.secondary)
-
-                    Text(deadlineText)
-                        .font(.system(size: 9, design: .monospaced))
-                        .foregroundStyle(deadlineColor)
-
-                    // XP estimate
-                    HStack(spacing: 2) {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 6))
-                        Text("~\(xpEstimate)")
-                            .font(.system(size: 8, weight: .medium))
-                    }
-                    .foregroundStyle(.yellow.opacity(0.8))
-                }
-            }
-
+            taskInfoSection
             Spacer()
-
-            // Countdown / Status
-            VStack(alignment: .trailing, spacing: 3) {
-                Text(task.timeRemainingFormatted)
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
-                    .foregroundStyle(deadlineColor)
-                    .changeEffect(
-                        .shake(rate: .fast),
-                        value: task.isOverdue ? 1 : 0,
-                        isEnabled: task.isOverdue
-                    )
-
-                // Progress bar with glow for urgent
-                if task.status != .completed {
-                    progressBar
-                }
-            }
-
-            // Action buttons
-            if task.status != .completed {
-                actionButtons
-            } else {
-                completedBadge
-                    .changeEffect(
-                        .spray(origin: .center) {
-                            Text("✓").foregroundStyle(.green)
-                        },
-                        value: completionTrigger
-                    )
-            }
+            countdownSection
+            actionSection
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(task.isOverdue ? Color.red.opacity(0.1) :
-                    task.status == .inProgress ? Color.blue.opacity(0.06) :
-                    Color.white.opacity(0.05))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(
-                    task.isUrgent ? Color.red.opacity(0.4) :
-                        task.status == .inProgress ? Color.blue.opacity(0.2) :
-                        Color.clear,
-                    lineWidth: 1
-                )
-        )
+        .background(rowBackground)
+        .overlay(rowBorder)
         .breathingGlow(isUrgent: task.isUrgent)
         .scaleEffect(isCompleting ? 0.95 : 1.0)
         .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isCompleting)
+    }
+
+    // MARK: - Body Sub-Views
+
+    private var taskInfoSection: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            taskTitleRow
+            taskMetaRow
+            if task.status != .completed && !schedulingReason.isEmpty {
+                Text(schedulingReason)
+                    .font(.system(size: 7, design: .rounded))
+                    .foregroundStyle(.purple.opacity(0.7))
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    private var taskTitleRow: some View {
+        HStack(spacing: 5) {
+            Text(task.title)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .lineLimit(1)
+                .strikethrough(task.status == .completed)
+                .foregroundStyle(task.status == .completed ? .secondary : .primary)
+
+            if task.status == .inProgress {
+                Text("ACTIVE")
+                    .font(.system(size: 7, weight: .bold))
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(.blue.opacity(0.3))
+                    .clipShape(Capsule())
+                    .changeEffect(.shine, value: task.status)
+            }
+
+            Text(difficultyBadge)
+                .font(.system(size: 7, weight: .bold, design: .rounded))
+                .foregroundStyle(loadColor.opacity(0.9))
+                .padding(.horizontal, 5)
+                .padding(.vertical, 1)
+                .background(loadColor.opacity(0.12))
+                .clipShape(Capsule())
+        }
+    }
+
+    private var taskMetaRow: some View {
+        HStack(spacing: 6) {
+            Image(systemName: task.category.icon)
+                .font(.system(size: 9))
+                .foregroundStyle(.secondary)
+
+            Text(task.category.rawValue)
+                .font(.system(size: 9))
+                .foregroundStyle(.secondary)
+
+            Text("·")
+                .foregroundStyle(.secondary)
+
+            Text(deadlineText)
+                .font(.system(size: 9, design: .monospaced))
+                .foregroundStyle(deadlineColor)
+
+            if task.status != .completed {
+                bandwidthPill
+            }
+
+            xpEstimateLabel
+        }
+    }
+
+    private var bandwidthPill: some View {
+        HStack(spacing: 2) {
+            Circle()
+                .fill(bandwidthMatchColor)
+                .frame(width: 4, height: 4)
+            Text("\(Int(bandwidthMatch * 100))%")
+                .font(.system(size: 7, weight: .bold, design: .monospaced))
+        }
+        .foregroundStyle(bandwidthMatchColor)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 1)
+        .background(bandwidthMatchColor.opacity(0.1))
+        .clipShape(Capsule())
+    }
+
+    private var xpEstimateLabel: some View {
+        HStack(spacing: 2) {
+            Image(systemName: "star.fill")
+                .font(.system(size: 6))
+            Text("~\(xpEstimate)")
+                .font(.system(size: 8, weight: .medium))
+        }
+        .foregroundStyle(.yellow.opacity(0.8))
+    }
+
+    private var countdownSection: some View {
+        VStack(alignment: .trailing, spacing: 3) {
+            Text(task.timeRemainingFormatted)
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundStyle(deadlineColor)
+                .changeEffect(
+                    .shake(rate: .fast),
+                    value: task.isOverdue ? 1 : 0,
+                    isEnabled: task.isOverdue
+                )
+
+            if task.status != .completed {
+                progressBar
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var actionSection: some View {
+        if task.status != .completed {
+            actionButtons
+        } else {
+            completedBadge
+                .changeEffect(
+                    .spray(origin: .center) {
+                        Text("✓").foregroundStyle(.green)
+                    },
+                    value: completionTrigger
+                )
+        }
+    }
+
+    private var rowBackground: some View {
+        RoundedRectangle(cornerRadius: 10)
+            .fill(task.isOverdue ? Color.red.opacity(0.1) :
+                task.status == .inProgress ? Color.blue.opacity(0.06) :
+                Color.white.opacity(0.05))
+    }
+
+    private var rowBorder: some View {
+        RoundedRectangle(cornerRadius: 10)
+            .strokeBorder(
+                task.isUrgent ? Color.red.opacity(0.4) :
+                    task.status == .inProgress ? Color.blue.opacity(0.2) :
+                    Color.clear,
+                lineWidth: 1
+            )
     }
 
     // MARK: - Cognitive Load Ring
@@ -199,6 +245,15 @@ struct TaskRowView: View {
         case 7...8: return .orange
         case 9...10: return .red
         default: return .gray
+        }
+    }
+
+    private var bandwidthMatchColor: Color {
+        switch bandwidthMatch {
+        case 0.8...1.0: return .green
+        case 0.6..<0.8: return .yellow
+        case 0.4..<0.6: return .orange
+        default: return .red
         }
     }
 

@@ -137,7 +137,114 @@ class CognitiveProfile: ObservableObject {
         updateStreak()
     }
 
-    // MARK: - Recovery Detection
+    // MARK: - Recovery Cycle Detection
+
+    @PublishedPersist(key: "cats_consecutiveHighLoadTasks", defaultValue: 0)
+    var consecutiveHighLoadTasks: Int
+
+    @PublishedPersist(key: "cats_totalCognitiveLoadToday", defaultValue: 0)
+    var totalCognitiveLoadToday: Int
+
+    @PublishedPersist(key: "cats_lastTaskCompletedTimestamp", defaultValue: 0.0)
+    var lastTaskCompletedTimestamp: Double
+
+    @PublishedPersist(key: "cats_recentTaskLoads", defaultValue: [Int]())
+    var recentTaskLoads: [Int] // last ~10 task loads for pattern detection
+
+    /// Record a completed task's cognitive load for fatigue sequence analysis
+    func recordTaskLoad(_ cognitiveLoad: Int) {
+        recentTaskLoads.append(cognitiveLoad)
+        if recentTaskLoads.count > 10 { recentTaskLoads = Array(recentTaskLoads.suffix(10)) }
+        totalCognitiveLoadToday += cognitiveLoad
+        lastTaskCompletedTimestamp = Date().timeIntervalSince1970
+
+        if cognitiveLoad >= 7 {
+            consecutiveHighLoadTasks += 1
+        } else {
+            consecutiveHighLoadTasks = 0
+        }
+    }
+
+    /// Detect if the user is in a fatigue sequence (multiple heavy tasks in a row)
+    var isFatigueSequence: Bool {
+        // 2+ consecutive high-load tasks, or 3+ medium-load tasks
+        if consecutiveHighLoadTasks >= 2 { return true }
+        let recentHeavy = recentTaskLoads.suffix(4).filter { $0 >= 6 }.count
+        return recentHeavy >= 3
+    }
+
+    /// Calculate cumulative cognitive strain from recent tasks
+    var cumulativeStrain: Double {
+        let loads = recentTaskLoads.suffix(5)
+        guard !loads.isEmpty else { return 0 }
+        let weighted = loads.enumerated().map { idx, load in
+            Double(load) * (1.0 + Double(idx) * 0.2) // more recent = heavier weight
+        }
+        return weighted.reduce(0, +) / 10.0 // normalize to ~0-1 range
+    }
+
+    /// Dynamic recovery recommendation based on fatigue pattern analysis
+    var recoveryCycle: (needsBreak: Bool, type: RecoveryType, minutes: Int, message: String, activities: [String]) {
+        // Critical fatigue: high strain + low energy + fatigue sequence
+        if isFatigueSequence && currentEnergy < 30 {
+            return (.init(true), .fullRecovery, 25, "Recovery cycle triggered — your brain needs a full reset. You've been crushing heavy tasks!", [
+                "Take a 10-minute walk outside",
+                "Close your eyes and do box breathing (4-4-4-4)",
+                "Hydrate and eat a light snack",
+                "Listen to ambient sounds for 5 minutes",
+                "Do gentle stretching for your neck and shoulders",
+            ])
+        }
+
+        // Fatigue sequence detected
+        if isFatigueSequence {
+            return (true, .activeRecovery, 15, "Fatigue sequence detected — \(consecutiveHighLoadTasks) heavy tasks in a row. Time for active recovery before your retention drops.", [
+                "Switch to a completely different activity for 10 min",
+                "Take a short walk",
+                "Do some light stretching",
+                "Hydrate — your brain needs water",
+            ])
+        }
+
+        // High cumulative strain
+        if cumulativeStrain > 0.7 && currentEnergy < 50 {
+            return (true, .microRecovery, 8, "Your cognitive load has been building up. A quick reset will boost your next session's effectiveness.", [
+                "Look away from screen — 20-20-20 rule",
+                "Take 5 deep breaths",
+                "Stretch your wrists and fingers",
+                "Drink some water",
+            ])
+        }
+
+        // Standard break detection (Pomodoro-style)
+        if needsFullBreak {
+            return (true, .fullRecovery, 20, "Time for a recovery break! You've been working hard.", [
+                "Close your eyes for 2 minutes",
+                "Take a short walk",
+                "Stretch your body",
+                "Hydrate - drink water",
+                "Listen to a calming song",
+            ])
+        }
+
+        if needsMicroBreak {
+            return (true, .microRecovery, 5, "Quick break? Your brain will thank you.", [
+                "Look away from screen for 20s",
+                "Take 3 deep breaths",
+                "Stretch your neck",
+                "Drink some water",
+            ])
+        }
+
+        return (false, .none, 0, "", [])
+    }
+
+    enum RecoveryType: String {
+        case none
+        case microRecovery = "Micro Recovery"
+        case activeRecovery = "Active Recovery"
+        case fullRecovery = "Full Recovery"
+    }
 
     var needsMicroBreak: Bool {
         focusSessionElapsedMinutes >= 25 && isFocusSessionActive
@@ -148,27 +255,30 @@ class CognitiveProfile: ObservableObject {
     }
 
     var suggestedBreakMinutes: Int {
-        if needsFullBreak { return 20 }
-        if needsMicroBreak { return 5 }
-        return 0
+        recoveryCycle.minutes
     }
 
     var breakActivities: [String] {
-        if needsFullBreak {
-            return [
-                "Close your eyes for 2 minutes",
-                "Take a short walk",
-                "Stretch your body",
-                "Hydrate - drink water",
-                "Listen to a calming song",
-            ]
-        }
-        return [
-            "Look away from screen for 20s",
-            "Take 3 deep breaths",
-            "Stretch your neck",
-            "Drink some water",
-        ]
+        recoveryCycle.activities
+    }
+
+    /// What cognitive load range is optimal right now given energy + fatigue
+    var optimalLoadRange: ClosedRange<Int> {
+        if currentEnergy >= 80 && !isFatigueSequence && isPeakHour { return 7...10 }
+        if currentEnergy >= 60 && !isFatigueSequence { return 5...8 }
+        if currentEnergy >= 40 { return 3...6 }
+        if currentEnergy >= 20 { return 1...4 }
+        return 1...3
+    }
+
+    /// How well a task's cognitive load matches current bandwidth (0.0 - 1.0)
+    func bandwidthMatch(for cognitiveLoad: Int) -> Double {
+        let range = optimalLoadRange
+        if range.contains(cognitiveLoad) { return 1.0 }
+        let distance = cognitiveLoad < range.lowerBound
+            ? Double(range.lowerBound - cognitiveLoad)
+            : Double(cognitiveLoad - range.upperBound)
+        return max(0, 1.0 - distance * 0.2)
     }
 
     // MARK: - Private
@@ -188,6 +298,9 @@ class CognitiveProfile: ObservableObject {
             totalFocusMinutesInSession = 0
             currentEnergy = 100
             fatigueAccumulator = 0
+            consecutiveHighLoadTasks = 0
+            totalCognitiveLoadToday = 0
+            recentTaskLoads = []
             lastActiveDateString = today
         }
     }

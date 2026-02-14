@@ -238,20 +238,33 @@ struct DynamicIslandContentView: View {
     private var smartSuggestion: (cat: String, text: String, isAI: Bool)? {
         let profile = vm.profile
 
-        // Break suggestion
-        let breakCheck = CognitiveEngine.shared.shouldSuggestBreak(profile: profile)
-        if breakCheck.shouldBreak {
-            return (breakCheck.cat, breakCheck.message, false)
+        // Recovery cycle suggestion (highest priority)
+        let cycle = profile.recoveryCycle
+        if cycle.needsBreak {
+            return (
+                CatFaces.page.breakHint,
+                "\(cycle.type.rawValue): \(cycle.message)",
+                false
+            )
         }
 
-        // Peak hour suggestion
-        if profile.isPeakHour,
-           let highTask = vm.taskStore.activeTasks.first(where: { $0.cognitiveLoad >= 7 })
-        {
+        // Smart task recommendation
+        if let recommended = vm.taskStore.recommendedTask(profile: profile) {
+            let reason = CognitiveEngine.shared.schedulingReason(for: recommended, profile: profile)
+            let match = Int(profile.bandwidthMatch(for: recommended.cognitiveLoad) * 100)
+
+            if profile.isPeakHour && recommended.cognitiveLoad >= 7 {
+                return (
+                    CatFaces.page.peakHour,
+                    "Peak hour! Do \"\(recommended.title)\" (load \(recommended.cognitiveLoad)/10, \(match)% match)",
+                    true
+                )
+            }
+
             return (
-                CatFaces.page.peakHour,
-                "Peak hour! Great time for \"\(highTask.title)\" (load: \(highTask.cognitiveLoad)/10)",
-                OpenRouterService.shared.isConfigured
+                CatFaces.focused.randomElement() ?? "(ΦωΦ)",
+                "Next: \"\(recommended.title)\" — \(reason)",
+                true
             )
         }
 

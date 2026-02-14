@@ -30,7 +30,7 @@ struct CountdownPillView: View {
                     .fill(urgencyColor(task))
                     .frame(width: 4, height: 4)
                     .changeEffect(
-                        .ping(shape: Circle().inset(by: -2), count: 2),
+                        .pulse(shape: Circle().inset(by: -2), count: 2),
                         value: urgencyPulse,
                         isEnabled: task.isUrgent
                     )

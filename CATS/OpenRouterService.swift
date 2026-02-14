@@ -12,16 +12,14 @@ import Foundation
 
 struct LLMChatResponse: Codable {
     let intent: String // "task" or "chat"
-    // Task fields (present when intent == "task")
     let title: String?
     let cognitiveLoad: Int?
     let loadReasoning: String?
     let estimatedMinutes: Int?
     let category: String?
-    let deadlineDescription: String?
+    let deadlineDescription: String? // LLM may send as "deadline" or "deadlineDescription"
     let difficultyBadge: String?
     let xpPreview: Int?
-    // Always present
     let reply: String
 
     // MARK: - Memberwise init
@@ -50,11 +48,25 @@ struct LLMChatResponse: Codable {
         self.reply = reply
     }
 
-    // MARK: - Flexible Codable (handles LLM type mismatches)
+    // MARK: - Flexible Codable (handles LLM type mismatches & key aliases)
 
     enum CodingKeys: String, CodingKey {
         case intent, title, cognitiveLoad, loadReasoning, estimatedMinutes
-        case category, deadlineDescription, difficultyBadge, xpPreview, reply
+        case category, deadlineDescription, deadline, difficultyBadge, xpPreview, reply
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(intent, forKey: .intent)
+        try container.encodeIfPresent(title, forKey: .title)
+        try container.encodeIfPresent(cognitiveLoad, forKey: .cognitiveLoad)
+        try container.encodeIfPresent(loadReasoning, forKey: .loadReasoning)
+        try container.encodeIfPresent(estimatedMinutes, forKey: .estimatedMinutes)
+        try container.encodeIfPresent(category, forKey: .category)
+        try container.encodeIfPresent(deadlineDescription, forKey: .deadlineDescription)
+        try container.encodeIfPresent(difficultyBadge, forKey: .difficultyBadge)
+        try container.encodeIfPresent(xpPreview, forKey: .xpPreview)
+        try container.encode(reply, forKey: .reply)
     }
 
     init(from decoder: Decoder) throws {
@@ -65,7 +77,9 @@ struct LLMChatResponse: Codable {
         loadReasoning = try? container.decode(String.self, forKey: .loadReasoning)
         estimatedMinutes = Self.decodeFlexibleInt(container: container, key: .estimatedMinutes)
         category = try? container.decode(String.self, forKey: .category)
-        deadlineDescription = try? container.decode(String.self, forKey: .deadlineDescription)
+        // Accept both "deadline" and "deadlineDescription" keys
+        deadlineDescription = (try? container.decode(String.self, forKey: .deadlineDescription))
+            ?? (try? container.decode(String.self, forKey: .deadline))
         difficultyBadge = try? container.decode(String.self, forKey: .difficultyBadge)
         xpPreview = Self.decodeFlexibleInt(container: container, key: .xpPreview)
         reply = (try? container.decode(String.self, forKey: .reply)) ?? "Got it!"
@@ -130,7 +144,7 @@ struct LLMChatResponse: Codable {
             loadReasoning: json["loadReasoning"] as? String,
             estimatedMinutes: flexibleInt(json["estimatedMinutes"]),
             category: json["category"] as? String,
-            deadlineDescription: json["deadlineDescription"] as? String,
+            deadlineDescription: (json["deadlineDescription"] as? String) ?? (json["deadline"] as? String),
             difficultyBadge: json["difficultyBadge"] as? String,
             xpPreview: flexibleInt(json["xpPreview"]),
             reply: reply
@@ -207,48 +221,43 @@ class OpenRouterService: ObservableObject {
         existingTasks: [CATSTask],
         streak: Int,
         level: String,
-        conversationHistory: [(role: String, content: String)] = []
+        conversationHistory: [(role: String, content: String)] = [],
+        calendarEvents: [String] = [],
+        fatigueSequence: Bool = false,
+        optimalLoadRange: String = "5-8"
     ) async throws -> LLMChatResponse {
         let taskContext = existingTasks.prefix(5).map { task in
             "- \(task.title) (load: \(task.cognitiveLoad)/10, due: \(task.timeRemainingFormatted))"
         }.joined(separator: "\n")
 
+        let dateFmt = DateFormatter()
+        dateFmt.dateFormat = "EEEE, MMM d yyyy, h:mm a"
+        let nowString = dateFmt.string(from: Date())
+
+        let calendarContext = calendarEvents.isEmpty ? "" : " Upcoming calendar: \(calendarEvents.prefix(5).joined(separator: "; "))."
+
         let systemPrompt = """
-            You are CATS (Cognitive-Aware Task Scheduler), a gamified AI study buddy living in a \
-            macOS Dynamic Island. You're a friendly cat-themed productivity assistant that helps \
-            students manage cognitive load and study sessions.
+            You are CATS, a cat-themed study buddy. Current time: \(nowString). \
+            User energy: \(Int(energy))%. Streak: \(streak) days. Level: \(level). \
+            Optimal cognitive load range now: \(optimalLoadRange).\
+            \(peakHour ? " PEAK HOUR — best for hard tasks." : "")\
+            \(fatigueSequence ? " WARNING: User is in a fatigue sequence, suggest lighter work or a break." : "")\
+            \(taskContext.isEmpty ? "" : " Tasks: \(taskContext)")\
+            \(calendarContext)
 
-            The user's current state:
-            - Energy: \(Int(energy))%\(peakHour ? " (PEAK HOUR - optimal for hard tasks!)" : "")
-            - Streak: \(streak) days
-            - Level: \(level)
-            \(taskContext.isEmpty ? "- No existing tasks" : "- Current tasks:\n\(taskContext)")
+            Reply with ONLY raw JSON. No markdown. No code fences.
 
-            IMPORTANT: First determine the user's INTENT:
-            - If they want to ADD A TASK (e.g. "I need to finish X", "study Y by Friday", "work on Z"), \
-            set intent to "task" and fill in ALL task fields.
-            - If they're asking a QUESTION or CHATTING (e.g. "what model are you", "how are you", \
-            "what should I do", "help", "thanks"), set intent to "chat" and just reply conversationally.
+            If user wants to ADD A TASK, reply EXACTLY like this example:
+            {"intent":"task","title":"Study Calculus","cognitiveLoad":7,"estimatedMinutes":60,"category":"deepWork","deadline":"today","reply":"Let's crush calculus!"}
 
-            Respond ONLY with valid JSON (no markdown, no code fences).
-            IMPORTANT: All number fields MUST be a single integer, NOT a range. For example \
-            write 60, not 60-90. String fields must be quoted strings. Follow this exact schema:
-            {
-              "intent": "task" or "chat",
-              "title": "Task title" or null,
-              "cognitiveLoad": 7,
-              "loadReasoning": "Why this load rating" or null,
-              "estimatedMinutes": 60,
-              "category": "deepWork" or "lightWork" or "review" or "creative" or null,
-              "deadlineDescription": "today" or "tomorrow" or "by friday" or null,
-              "difficultyBadge": "Fun 2-3 word badge" or null,
-              "xpPreview": 15,
-              "reply": "Your response message to the user (ALWAYS required, keep it short and fun)"
-            }
+            If user is CHATTING, reply EXACTLY like this example:
+            {"intent":"chat","reply":"Hey! Ready to help you study!"}
 
-            For chat intent: be helpful, witty, cat-themed. You ARE the CATS app. If asked what model \
-            you are, say you're CATS powered by AI. Keep replies under 2-3 sentences.
-            For task intent: the reply should confirm the task was added with encouragement.
+            Rules: cognitiveLoad 1-10 integer (use the optimal range as guide). \
+            estimatedMinutes single integer. \
+            category: deepWork, lightWork, review, or creative. \
+            deadline: today, tomorrow, or a weekday name. reply is always required. \
+            All numbers must be plain integers like 60, never ranges like 60-90.
             """
 
         // Build multi-turn messages with conversation history
@@ -361,7 +370,7 @@ class OpenRouterService: ObservableObject {
             "model": effectiveModel,
             "messages": messages.map { ["role": $0.0, "content": $0.1] },
             "max_tokens": maxTokens,
-            "temperature": 0.7,
+            "temperature": 0.3,
         ]
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)

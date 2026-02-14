@@ -4,6 +4,9 @@
     "·" : {
 
     },
+    "· Fatigue sequence detected" : {
+
+    },
     "(%@)" : {
 
     },
@@ -62,11 +65,24 @@
     "%lld active" : {
 
     },
+    "%lld min recommended" : {
+
+    },
     "%lld tasks" : {
 
     },
     "%lld XP" : {
 
+    },
+    "%lld-%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld-%2$lld"
+          }
+        }
+      }
     },
     "%lld/%lld XP" : {
       "localizations" : {
@@ -79,6 +95,9 @@
       }
     },
     "%lld%%" : {
+
+    },
+    "%lldm" : {
 
     },
     "+%lld XP" : {
@@ -393,6 +412,9 @@
         }
       }
     },
+    "Bandwidth" : {
+
+    },
     "Bandwidth:" : {
 
     },
@@ -486,6 +508,9 @@
     "Click to open and add tasks via chat" : {
 
     },
+    "Cognitive strain: %lld%%" : {
+
+    },
     "Connect" : {
 
     },
@@ -542,6 +567,9 @@
       }
     },
     "Dismiss" : {
+
+    },
+    "DO NEXT" : {
 
     },
     "Done!" : {
@@ -1191,6 +1219,12 @@
       }
     },
     "OpenRouter API Key" : {
+
+    },
+    "Optimal:" : {
+
+    },
+    "Peak" : {
 
     },
     "Peak Hour! Tackle your hardest task now for bonus XP" : {

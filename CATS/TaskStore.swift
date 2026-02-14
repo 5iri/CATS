@@ -61,11 +61,16 @@ class TaskStore: ObservableObject {
                 tasks[idx].status = .completed
                 tasks[idx].completedAt = Date()
                 
-                // Award XP for task completion
+                // Award XP + record cognitive load for recovery cycle detection
                 if let profile = profile {
                     profile.awardTaskCompletionXP(
                         cognitiveLoad: task.cognitiveLoad,
                         estimatedMinutes: task.estimatedMinutes
+                    )
+                    profile.recordTaskLoad(task.cognitiveLoad)
+                    profile.consumeEnergy(
+                        cognitiveLoad: task.cognitiveLoad,
+                        minutes: task.estimatedMinutes
                     )
                 }
             }
@@ -83,6 +88,27 @@ class TaskStore: ObservableObject {
     var activeTasks: [CATSTask] {
         tasks.filter { $0.status != .completed }
             .sorted { $0.priorityScore > $1.priorityScore }
+    }
+
+    /// Tasks ordered by bandwidth-aware cognitive scheduling
+    func smartScheduledTasks(profile: CognitiveProfile) -> [CATSTask] {
+        CognitiveEngine.shared.suggestSchedule(tasks: tasks, profile: profile)
+    }
+
+    /// The single best task to work on right now
+    func recommendedTask(profile: CognitiveProfile) -> CATSTask? {
+        smartScheduledTasks(profile: profile).first
+    }
+
+    /// Total cognitive load across all active tasks
+    var totalActiveCognitiveLoad: Int {
+        activeTasks.reduce(0) { $0 + $1.cognitiveLoad }
+    }
+
+    /// Average cognitive load of active tasks
+    var averageCognitiveLoad: Double {
+        guard !activeTasks.isEmpty else { return 0 }
+        return Double(totalActiveCognitiveLoad) / Double(activeTasks.count)
     }
 
     var completedTasks: [CATSTask] {
