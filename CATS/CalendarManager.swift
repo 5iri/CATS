@@ -236,40 +236,116 @@ class CalendarManager: ObservableObject {
         }
     }
 
-    /// Write an entire generated schedule to the calendar
-    /// Returns number of events created
+    /// Rearrange schedule on calendar: update existing CATS events in place, create new ones as needed.
+    /// Keeps everything and just rearranges — does not clear all events first.
+    @discardableResult
+    func rearrangeScheduleOnCalendar(_ blocks: [CognitiveEngine.ScheduleBlock]) -> Int {
+        guard isAuthorized else { return 0 }
+
+        let existing = fetchTodayCATSEvents()
+        var count = 0
+
+        for (idx, block) in blocks.enumerated() {
+            let (title, notes) = blockTitleAndNotes(for: block)
+
+            if idx < existing.count {
+                // Update existing event in place (rearrange)
+                let event = existing[idx]
+                event.title = title
+                event.notes = notes
+                event.startDate = block.startTime
+                event.endDate = block.endTime
+                if let alarms = event.alarms {
+                    for alarm in alarms { event.removeAlarm(alarm) }
+                }
+                let alertOffset: TimeInterval = block.task != nil ? -300 : -60
+                event.addAlarm(EKAlarm(relativeOffset: alertOffset))
+
+                do {
+                    try eventStore.save(event, span: .thisEvent)
+                    count += 1
+                } catch {
+                    print("[CATS] Failed to update calendar event: \(error)")
+                }
+            } else {
+                // Create new event
+                let event = EKEvent(eventStore: eventStore)
+                event.title = title
+                event.notes = notes
+                event.startDate = block.startTime
+                event.endDate = block.endTime
+                event.calendar = eventStore.defaultCalendarForNewEvents
+                let alertOffset: TimeInterval = block.task != nil ? -300 : -60
+                event.addAlarm(EKAlarm(relativeOffset: alertOffset))
+
+                do {
+                    try eventStore.save(event, span: .thisEvent)
+                    count += 1
+                } catch {
+                    print("[CATS] Failed to save calendar event: \(error)")
+                }
+            }
+        }
+
+        fetchUpcomingEvents()
+        return count
+    }
+
+    private func fetchTodayCATSEvents() -> [EKEvent] {
+        let calendar = Calendar.current
+        let now = Date()
+        let startOfDay = calendar.startOfDay(for: now)
+        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else { return [] }
+
+        let predicate = eventStore.predicateForEvents(
+            withStart: startOfDay,
+            end: endOfDay,
+            calendars: nil
+        )
+
+        return eventStore.events(matching: predicate)
+            .filter { $0.title?.contains("CATS:") == true }
+            .sorted { ($0.startDate ?? .distantPast) < ($1.startDate ?? .distantPast) }
+    }
+
+    private func blockTitleAndNotes(for block: CognitiveEngine.ScheduleBlock) -> (String, String) {
+        let title: String
+        switch block.type {
+        case .deepWork:
+            title = "🧠 CATS: \(block.label)"
+        case .lightWork:
+            title = "📖 CATS: \(block.label)"
+        case .recoveryBreak:
+            title = "💚 CATS: Recovery Break"
+        case .microBreak:
+            title = "☕ CATS: Micro Break"
+        }
+
+        var notes = "Scheduled by CATS (=^·ω·^=)\n"
+        notes += block.reason
+        if let task = block.task {
+            notes += "\nCognitive Load: \(task.cognitiveLoad)/10"
+            notes += "\nCategory: \(task.category.rawValue)"
+        }
+
+        return (title, notes)
+    }
+
+    /// Write an entire generated schedule to the calendar (creates new events only)
     @discardableResult
     func writeScheduleToCalendar(_ blocks: [CognitiveEngine.ScheduleBlock]) -> Int {
         guard isAuthorized else { return 0 }
 
         var count = 0
         for block in blocks {
+            let (title, notes) = blockTitleAndNotes(for: block)
             let event = EKEvent(eventStore: eventStore)
-
-            switch block.type {
-            case .deepWork:
-                event.title = "🧠 CATS: \(block.label)"
-            case .lightWork:
-                event.title = "📖 CATS: \(block.label)"
-            case .recoveryBreak:
-                event.title = "💚 CATS: Recovery Break"
-            case .microBreak:
-                event.title = "☕ CATS: Micro Break"
-            }
-
+            event.title = title
+            event.notes = notes
             event.startDate = block.startTime
             event.endDate = block.endTime
-
-            var notes = "Scheduled by CATS (=^·ω·^=)\n"
-            notes += block.reason
-            if let task = block.task {
-                notes += "\nCognitive Load: \(task.cognitiveLoad)/10"
-                notes += "\nCategory: \(task.category.rawValue)"
-            }
-            event.notes = notes
             event.calendar = eventStore.defaultCalendarForNewEvents
 
-            // Alert 5 min before work blocks, 1 min before breaks
             let alertOffset: TimeInterval = block.task != nil ? -300 : -60
             event.addAlarm(EKAlarm(relativeOffset: alertOffset))
 
@@ -281,7 +357,6 @@ class CalendarManager: ObservableObject {
             }
         }
 
-        // Refresh events
         fetchUpcomingEvents()
         return count
     }

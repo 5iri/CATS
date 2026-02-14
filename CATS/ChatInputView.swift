@@ -1008,13 +1008,12 @@ struct ChatInputView: View {
                 isAIPowered: false
             ))
 
-            // Write to calendar if authorized
+            // Write to calendar if authorized (rearrange in place, don't remove)
             if calendarManager.isAuthorized {
-                calendarManager.clearTodaySchedule()
-                let count = calendarManager.writeScheduleToCalendar(schedule)
+                let count = calendarManager.rearrangeScheduleOnCalendar(schedule)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     chatHistory.addMessage(ChatMessage(
-                        text: "Synced \(count) blocks to your Apple Calendar! You'll get reminders before each session.",
+                        text: "Rearranged \(count) blocks on your Apple Calendar! You'll get reminders before each session.",
                         isUser: false,
                         cat: CatFaces.happy.randomElement()
                     ))

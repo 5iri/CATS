@@ -353,25 +353,33 @@ class CognitiveEngine {
             avoiding: busySlots
         )
 
-        // Assign tasks to optimal slots
+        // Assign tasks to optimal slots — ALL tasks are always kept, never dropped
         var schedule: [ScheduleBlock] = []
         var remainingTasks = activeTasks.sorted { $0.priorityScore > $1.priorityScore }
         var consecutiveHeavy = 0
 
         while !remainingTasks.isEmpty && !freeSlots.isEmpty {
-            guard let (_, slot) = bestSlot(
-                for: remainingTasks[0],
+            let task = remainingTasks[0]
+
+            // Try to find the best slot for this task
+            let slotResult = bestSlot(
+                for: task,
                 in: freeSlots,
                 profile: profile,
                 consecutiveHeavy: consecutiveHeavy
-            ) else {
-                // Can't fit this task anywhere — skip it
-                remainingTasks.removeFirst()
-                continue
+            )
+
+            let slot: (start: Date, end: Date)
+            if let (_, matched) = slotResult {
+                slot = matched
+            } else {
+                // No ideal slot — force-fit into the first available slot (never drop tasks)
+                slot = freeSlots[0]
             }
 
-            let task = remainingTasks.removeFirst()
-            let duration = min(task.estimatedMinutes, Int(slot.end.timeIntervalSince(slot.start) / 60))
+            remainingTasks.removeFirst()
+            let availableMinutes = Int(slot.end.timeIntervalSince(slot.start) / 60)
+            let duration = max(10, min(task.estimatedMinutes, availableMinutes)) // at least 10 min
             let blockEnd = slot.start.addingTimeInterval(Double(duration) * 60)
 
             // Determine block type
@@ -427,6 +435,26 @@ class CognitiveEngine {
                 freeSlots = updateFreeSlots(freeSlots, removing: (slot.start, bufferEnd))
             } else {
                 freeSlots = updateFreeSlots(freeSlots, removing: (slot.start, blockEnd))
+            }
+        }
+
+        // If any tasks remain after slots are exhausted, pack them at the end
+        if !remainingTasks.isEmpty {
+            var cursor = schedule.last?.endTime ?? scheduleStart
+            for task in remainingTasks {
+                let duration = Double(task.estimatedMinutes) * 60
+                let blockEnd = cursor.addingTimeInterval(duration)
+                let blockType: ScheduleBlock.BlockType = task.cognitiveLoad >= 7 ? .deepWork : .lightWork
+
+                schedule.append(ScheduleBlock(
+                    startTime: cursor,
+                    endTime: blockEnd,
+                    type: blockType,
+                    task: task,
+                    label: task.title,
+                    reason: "Overflow — all preferred slots full, but task is kept"
+                ))
+                cursor = blockEnd.addingTimeInterval(5 * 60) // 5-min buffer
             }
         }
 
@@ -503,21 +531,33 @@ class CognitiveEngine {
             slots = newSlots
         }
 
-        // Filter out slots shorter than 15 minutes
-        return slots.filter { $0.end.timeIntervalSince($0.start) >= 15 * 60 }
+        // Filter out slots shorter than 5 minutes (keep small slots for short tasks)
+        return slots.filter { $0.end.timeIntervalSince($0.start) >= 5 * 60 }
     }
 
     private func updateFreeSlots(
         _ slots: [(start: Date, end: Date)],
         removing used: (Date, Date)
     ) -> [(start: Date, end: Date)] {
-        buildFreeSlots(from: slots.first?.start ?? Date(), to: slots.last?.end ?? Date(), avoiding: [used])
-            .filter { slot in
-                // Only keep slots that were in the original free set
-                slots.contains { orig in
-                    slot.start >= orig.start && slot.end <= orig.end
-                }
+        var result: [(start: Date, end: Date)] = []
+        let (usedStart, usedEnd) = used
+
+        for slot in slots {
+            // No overlap
+            if usedEnd <= slot.start || usedStart >= slot.end {
+                result.append(slot)
+                continue
             }
+            // Partial overlap: keep the non-overlapping part(s)
+            if usedStart > slot.start {
+                result.append((slot.start, usedStart))
+            }
+            if usedEnd < slot.end {
+                result.append((usedEnd, slot.end))
+            }
+        }
+
+        return result.filter { $0.end.timeIntervalSince($0.start) >= 5 * 60 }
     }
 
     private func bestSlot(
@@ -534,7 +574,7 @@ class CognitiveEngine {
 
         for (idx, slot) in slots.enumerated() {
             let available = slot.end.timeIntervalSince(slot.start)
-            guard available >= min(needed, 15 * 60) else { continue } // need at least 15 min
+            guard available >= min(needed, 5 * 60) else { continue } // need at least 5 min
 
             let hour = calendar.component(.hour, from: slot.start)
             let loadRange = optimalLoadRange(atHour: hour, profile: profile)
