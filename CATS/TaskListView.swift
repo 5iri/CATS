@@ -44,11 +44,26 @@ struct TaskListView: View {
 
                         // Completed (collapsed)
                         if !taskStore.completedTasks.isEmpty {
-                            sectionHeader(
-                                "Completed (\(taskStore.completedTasks.count))",
-                                icon: "checkmark.circle.fill",
-                                color: .green
-                            )
+                            HStack {
+                                sectionHeader(
+                                    "Completed (\(taskStore.completedTasks.count))",
+                                    icon: "checkmark.circle.fill",
+                                    color: .green
+                                )
+                                Spacer()
+                                Button(action: {
+                                    taskStore.clearCompleted()
+                                }) {
+                                    Text("Clear All")
+                                        .font(.system(size: 8, weight: .medium))
+                                        .foregroundStyle(.red.opacity(0.8))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.red.opacity(0.1))
+                                        .clipShape(Capsule())
+                                }
+                                .buttonStyle(.plain)
+                            }
                             ForEach(taskStore.completedTasks.prefix(5)) { task in
                                 taskRow(task)
                             }
@@ -56,6 +71,7 @@ struct TaskListView: View {
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 6)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: taskStore.tasks)
                 }
             }
         }
@@ -65,12 +81,6 @@ struct TaskListView: View {
         HStack {
             Text(profile.energyMood)
                 .font(.system(size: 14))
-                .changeEffect(
-                    .spray(origin: .center) {
-                        Text("✨").font(.system(size: 10))
-                    },
-                    value: completedTaskTrigger
-                )
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("CATS")
@@ -91,17 +101,29 @@ struct TaskListView: View {
 
             Spacer()
             
-            // XP badge
+            // XP badge with confetti
             HStack(spacing: 2) {
                 Image(systemName: "star.fill")
                     .font(.system(size: 8))
                     .foregroundStyle(.yellow)
+                    .changeEffect(
+                        .spray(origin: .center) {
+                            Group {
+                                Text("✨")
+                                Text("⭐")
+                                Text("💫")
+                            }
+                            .font(.system(size: 10))
+                        },
+                        value: completedTaskTrigger
+                    )
                 Text("\(profile.totalXP)")
                     .font(.system(size: 9, weight: .bold, design: .monospaced))
                     .contentTransition(.numericText())
                     .animation(.snappy, value: profile.totalXP)
             }
             .changeEffect(.shine, value: completedTaskTrigger)
+            .changeEffect(.jump(height: 5), value: completedTaskTrigger)
 
             // Level badge
             VStack(alignment: .trailing, spacing: 1) {

@@ -38,6 +38,7 @@
         }
       }
     },
+<<<<<<< Updated upstream
     "%lld%%": {},
     "+%lld XP": {},
     "✓": {},
@@ -53,6 +54,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 Day"
+=======
+    "%lld%%" : {
+
+    },
+    "+%lld XP" : {
+
+    },
+    "✓" : {
+
+    },
+    "✨" : {
+
+    },
+    "⭐" : {
+
+    },
+    "🌟" : {
+
+    },
+    "🎉 LEVEL UP! 🎉" : {
+
+    },
+    "💫" : {
+
+    },
+    "🔥" : {
+
+    },
+    "1 Day" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 Day"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 Día"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 Jour"
+>>>>>>> Stashed changes
           }
         }
       }
@@ -203,6 +252,7 @@
         }
       }
     },
+<<<<<<< Updated upstream
     "Click to open and add tasks via chat": {},
     "Connect": {},
     "Custom": {
@@ -212,6 +262,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Custom"
+=======
+    "Clear All" : {
+
+    },
+    "Click to open and add tasks via chat" : {
+
+    },
+    "Connect" : {
+
+    },
+    "Custom" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personnalisé"
+>>>>>>> Stashed changes
           }
         }
       }

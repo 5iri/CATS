@@ -5,6 +5,7 @@
 
 import Combine
 import Foundation
+import SwiftUI
 
 class TaskStore: ObservableObject {
     static let shared = TaskStore()
@@ -41,21 +42,32 @@ class TaskStore: ObservableObject {
     }
 
     func removeTask(_ id: UUID) {
-        tasks.removeAll { $0.id == id }
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            tasks.removeAll { $0.id == id }
+        }
+    }
+    
+    func clearCompleted() {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            tasks.removeAll { $0.status == .completed }
+        }
     }
 
     func completeTask(_ id: UUID, profile: CognitiveProfile? = nil) {
-        if let idx = tasks.firstIndex(where: { $0.id == id }) {
-            let task = tasks[idx]
-            tasks[idx].status = .completed
-            tasks[idx].completedAt = Date()
-            
-            // Award XP for task completion
-            if let profile = profile {
-                profile.awardTaskCompletionXP(
-                    cognitiveLoad: task.cognitiveLoad,
-                    estimatedMinutes: task.estimatedMinutes
-                )
+        // Use withAnimation to trigger list transitions
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            if let idx = tasks.firstIndex(where: { $0.id == id }) {
+                let task = tasks[idx]
+                tasks[idx].status = .completed
+                tasks[idx].completedAt = Date()
+                
+                // Award XP for task completion
+                if let profile = profile {
+                    profile.awardTaskCompletionXP(
+                        cognitiveLoad: task.cognitiveLoad,
+                        estimatedMinutes: task.estimatedMinutes
+                    )
+                }
             }
         }
     }
