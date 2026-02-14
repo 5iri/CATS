@@ -93,7 +93,7 @@ struct TaskListView: View {
                                     taskStore.clearCompleted()
                                 }) {
                                     Text("Clear All")
-                                        .font(.system(size: 8, weight: .medium))
+                                        .font(.system(size: 12, weight: .medium))
                                         .foregroundStyle(.red.opacity(0.8))
                                         .padding(.horizontal, 6)
                                         .padding(.vertical, 2)
@@ -120,21 +120,21 @@ struct TaskListView: View {
     private var headerBar: some View {
         HStack {
             Text(profile.energyMood)
-                .font(.system(size: 14))
+                .font(.system(size: 18))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("CATS")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
                 HStack(spacing: 4) {
                     Text("\(taskStore.activeTasks.count) tasks")
-                        .font(.system(size: 9))
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                         .contentTransition(.numericText())
                         .animation(.snappy, value: taskStore.activeTasks.count)
                     Text("·")
                         .foregroundStyle(.secondary)
                     Text("Energy: \(Int(profile.currentEnergy))%")
-                        .font(.system(size: 9))
+                        .font(.system(size: 13))
                         .foregroundStyle(energyColor)
                 }
             }
@@ -144,7 +144,7 @@ struct TaskListView: View {
             // XP badge with confetti
             HStack(spacing: 2) {
                 Image(systemName: "star.fill")
-                    .font(.system(size: 8))
+                    .font(.system(size: 12))
                     .foregroundStyle(.yellow)
                     .changeEffect(
                         .spray(origin: .center) {
@@ -153,12 +153,12 @@ struct TaskListView: View {
                                 Text("⭐")
                                 Text("💫")
                             }
-                            .font(.system(size: 10))
+                            .font(.system(size: 14))
                         },
                         value: completedTaskTrigger
                     )
                 Text("\(profile.totalXP)")
-                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .font(.system(size: 13, weight: .bold, design: .monospaced))
                     .contentTransition(.numericText())
                     .animation(.snappy, value: profile.totalXP)
             }
@@ -168,9 +168,9 @@ struct TaskListView: View {
             // Level badge
             VStack(alignment: .trailing, spacing: 1) {
                 Text(profile.currentLevel.cat)
-                    .font(.system(size: 11))
+                    .font(.system(size: 15))
                 Text(profile.currentLevel.name)
-                    .font(.system(size: 8, weight: .medium))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
             }
         }
@@ -186,10 +186,10 @@ struct TaskListView: View {
                 // Energy gauge
                 HStack(spacing: 3) {
                     Image(systemName: "brain.head.profile")
-                        .font(.system(size: 9))
+                        .font(.system(size: 13))
                         .foregroundStyle(energyColor)
                     Text("Bandwidth")
-                        .font(.system(size: 8, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.secondary)
                 }
 
@@ -212,7 +212,7 @@ struct TaskListView: View {
                 .frame(height: 6)
 
                 Text("\(Int(profile.currentEnergy))%")
-                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .font(.system(size: 13, weight: .bold, design: .monospaced))
                     .foregroundStyle(energyColor)
 
                 Spacer()
@@ -221,10 +221,10 @@ struct TaskListView: View {
                 let range = profile.optimalLoadRange
                 HStack(spacing: 3) {
                     Text("Optimal:")
-                        .font(.system(size: 7))
+                        .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                     Text("\(range.lowerBound)-\(range.upperBound)")
-                        .font(.system(size: 8, weight: .bold, design: .monospaced))
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
                         .foregroundStyle(.purple)
                 }
                 .padding(.horizontal, 6)
@@ -236,9 +236,9 @@ struct TaskListView: View {
                 if profile.isPeakHour {
                     HStack(spacing: 2) {
                         Image(systemName: "bolt.fill")
-                            .font(.system(size: 7))
+                            .font(.system(size: 11))
                         Text("Peak")
-                            .font(.system(size: 7, weight: .bold))
+                            .font(.system(size: 11, weight: .bold))
                     }
                     .foregroundStyle(.orange)
                     .padding(.horizontal, 5)
@@ -252,14 +252,14 @@ struct TaskListView: View {
             if profile.cumulativeStrain > 0.4 {
                 HStack(spacing: 4) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 7))
+                        .font(.system(size: 11))
                         .foregroundStyle(.orange)
                     Text("Cognitive strain: \(Int(profile.cumulativeStrain * 100))%")
-                        .font(.system(size: 7, weight: .medium))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.orange.opacity(0.8))
                     if profile.isFatigueSequence {
                         Text("· Fatigue sequence detected")
-                            .font(.system(size: 7))
+                            .font(.system(size: 11))
                             .foregroundStyle(.red.opacity(0.8))
                     }
                     Spacer()
@@ -279,15 +279,15 @@ struct TaskListView: View {
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: "heart.circle.fill")
-                    .font(.system(size: 14))
+                    .font(.system(size: 18))
                     .foregroundStyle(.pink)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(cycle.type.rawValue)
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
                         .foregroundStyle(.pink)
                     Text("\(cycle.minutes) min recommended")
-                        .font(.system(size: 8, weight: .medium))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
 
@@ -302,14 +302,14 @@ struct TaskListView: View {
                         .stroke(Color.pink, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                     Text("\(cycle.minutes)m")
-                        .font(.system(size: 7, weight: .bold, design: .monospaced))
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
                         .foregroundStyle(.pink)
                 }
                 .frame(width: 28, height: 28)
             }
 
             Text(cycle.message)
-                .font(.system(size: 9, design: .rounded))
+                .font(.system(size: 13, design: .rounded))
                 .foregroundStyle(.primary.opacity(0.8))
                 .lineLimit(2)
 
@@ -317,7 +317,7 @@ struct TaskListView: View {
             HStack(spacing: 4) {
                 ForEach(cycle.activities.prefix(3), id: \.self) { activity in
                     Text(activity)
-                        .font(.system(size: 7))
+                        .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .padding(.horizontal, 6)
@@ -354,7 +354,7 @@ struct TaskListView: View {
                     .stroke(matchColor(match), style: StrokeStyle(lineWidth: 2, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 Text("\(task.cognitiveLoad)")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
                     .foregroundStyle(matchColor(match))
             }
             .frame(width: 26, height: 26)
@@ -362,14 +362,14 @@ struct TaskListView: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
                     Text("DO NEXT")
-                        .font(.system(size: 7, weight: .heavy, design: .rounded))
+                        .font(.system(size: 11, weight: .heavy, design: .rounded))
                         .foregroundStyle(.green)
                     Text(task.title)
-                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .lineLimit(1)
                 }
                 Text(reason)
-                    .font(.system(size: 8, design: .rounded))
+                    .font(.system(size: 12, design: .rounded))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -378,7 +378,7 @@ struct TaskListView: View {
 
             // Bandwidth match badge
             Text("\(Int(match * 100))%")
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
                 .foregroundStyle(matchColor(match))
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
@@ -424,11 +424,11 @@ struct TaskListView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             Text(CatFaces.sleepy.randomElement()!)
-                .font(.system(size: 28))
+                .font(.system(size: 32))
             Text("No tasks yet")
-                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .font(.system(size: 17, weight: .medium, design: .rounded))
             Text("Click to open and add tasks via chat")
-                .font(.system(size: 10))
+                .font(.system(size: 14))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -438,10 +438,10 @@ struct TaskListView: View {
     private func sectionHeader(_ title: String, icon: String, color: Color) -> some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 9))
+                .font(.system(size: 13))
                 .foregroundStyle(color)
             Text(title)
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .foregroundStyle(.secondary)
             Spacer()
         }

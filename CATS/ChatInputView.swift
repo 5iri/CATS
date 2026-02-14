@@ -213,7 +213,7 @@ struct ChatInputView: View {
 
                 TextField("Chat or add a task...", text: $inputText)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 12, design: .rounded))
+                    .font(.system(size: 16, design: .rounded))
                     .onSubmit { sendMessage() }
 
                 // Clear chat history button
@@ -256,19 +256,19 @@ struct ChatInputView: View {
 
             if llm.isConfigured {
                 Text("AI Enhanced")
-                    .font(.system(size: 8, weight: .semibold, design: .rounded))
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundStyle(.green.opacity(0.8))
 
                 Text("·")
                     .foregroundStyle(.secondary)
-                    .font(.system(size: 8))
+                    .font(.system(size: 12))
 
                 Text(currentModelName)
-                    .font(.system(size: 8, design: .rounded))
+                    .font(.system(size: 12, design: .rounded))
                     .foregroundStyle(.secondary)
             } else {
                 Text("Offline Mode")
-                    .font(.system(size: 8, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
                     .foregroundStyle(.orange.opacity(0.8))
             }
 
@@ -277,10 +277,10 @@ struct ChatInputView: View {
             // Mental bandwidth meter
             HStack(spacing: 3) {
                 Image(systemName: "brain.head.profile")
-                    .font(.system(size: 8))
+                    .font(.system(size: 12))
                     .foregroundStyle(bandwidthColor)
                 Text("\(bandwidthLabel)")
-                    .font(.system(size: 8, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
                     .foregroundStyle(bandwidthColor)
             }
             .padding(.horizontal, 6)
@@ -322,10 +322,10 @@ struct ChatInputView: View {
     private var welcomeMessage: some View {
         VStack(spacing: 10) {
             Text(CatFaces.page.welcome)
-                .font(.system(size: 28))
+                .font(.system(size: 36))
 
             Text("What do you need to work on?")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(.system(size: 17, weight: .semibold, design: .rounded))
 
             if llm.isConfigured {
                 Text("AI-powered cognitive load analysis active")
@@ -356,13 +356,13 @@ struct ChatInputView: View {
         VStack(spacing: 2) {
             HStack(spacing: 2) {
                 Image(systemName: icon)
-                    .font(.system(size: 8))
+                    .font(.system(size: 12))
                     .foregroundStyle(color)
                 Text(value)
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
             }
             Text(label)
-                .font(.system(size: 7))
+                .font(.system(size: 11))
                 .foregroundStyle(.secondary)
         }
     }
@@ -374,10 +374,10 @@ struct ChatInputView: View {
         }) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 8))
+                    .font(.system(size: 12))
                     .foregroundStyle(.blue.opacity(0.6))
                 Text(text)
-                    .font(.system(size: 10, design: .rounded))
+                    .font(.system(size: 14, design: .rounded))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
@@ -396,11 +396,11 @@ struct ChatInputView: View {
             VStack(alignment: msg.isUser ? .trailing : .leading, spacing: 3) {
                 if let cat = msg.cat {
                     Text(cat)
-                        .font(.system(size: 14))
+                        .font(.system(size: 18))
                 }
 
                 Text(msg.text)
-                    .font(.system(size: 11, design: .rounded))
+                    .font(.system(size: 15, design: .rounded))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .background(
@@ -415,7 +415,7 @@ struct ChatInputView: View {
                     HStack(spacing: 6) {
                         if msg.isAIPowered {
                             Label("AI", systemImage: "sparkles")
-                                .font(.system(size: 7, weight: .semibold))
+                                .font(.system(size: 11, weight: .semibold))
                                 .foregroundStyle(.purple)
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 2)
@@ -425,7 +425,7 @@ struct ChatInputView: View {
 
                         if let badge = msg.difficultyBadge {
                             Text(badge)
-                                .font(.system(size: 7, weight: .bold, design: .rounded))
+                                .font(.system(size: 11, weight: .bold, design: .rounded))
                                 .foregroundStyle(badgeColor(msg.cognitiveLoad ?? 5))
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 2)
@@ -436,9 +436,9 @@ struct ChatInputView: View {
                         if let xp = msg.xpEarned, xp > 0 {
                             HStack(spacing: 2) {
                                 Image(systemName: "star.fill")
-                                    .font(.system(size: 6))
+                                    .font(.system(size: 10))
                                 Text("+\(xp) XP")
-                                    .font(.system(size: 7, weight: .bold))
+                                    .font(.system(size: 11, weight: .bold))
                             }
                             .foregroundStyle(.yellow)
                             .padding(.horizontal, 5)

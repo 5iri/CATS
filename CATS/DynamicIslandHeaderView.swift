@@ -21,40 +21,40 @@ struct DynamicIslandHeaderView: View {
         HStack(spacing: 8) {
             // Cat face based on mood with bounce animation
             Text(catFace)
-                .font(.system(size: 14))
+                .font(.system(size: 18))
                 .transition(.catBounce)
                 .id(catFace)
                 .changeEffect(
                     .spray(origin: .center) {
-                        Text("✨").font(.system(size: 10))
+                        Text("✨").font(.system(size: 14))
                     },
                     value: xpGainTrigger
                 )
 
             // CATS title and content type
             Text(headerTitle)
-                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .font(.system(size: 15, weight: .bold, design: .rounded))
                 .contentTransition(.numericText())
 
             Spacer()
-            
+
             // XP badge with animation
             ZStack {
                 HStack(spacing: 2) {
                     Image(systemName: "star.fill")
-                        .font(.system(size: 7))
+                        .font(.system(size: 11))
                         .foregroundStyle(.yellow)
                     Text("\(vm.profile.totalXP)")
-                        .font(.system(size: 8, weight: .bold, design: .monospaced))
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
                         .contentTransition(.numericText())
                         .animation(.snappy, value: vm.profile.totalXP)
                 }
                 .changeEffect(.shine, value: xpGainTrigger)
-                
+
                 // Floating +XP text
                 if showXPGain {
                     Text("+\(lastXPGain) XP")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
                         .foregroundStyle(.yellow)
                         .shadow(color: .yellow.opacity(0.5), radius: 4)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -70,18 +70,18 @@ struct DynamicIslandHeaderView: View {
             if vm.profile.currentStreak > 0 {
                 HStack(spacing: 2) {
                     Image(systemName: "flame.fill")
-                        .font(.system(size: 8))
+                        .font(.system(size: 12))
                         .foregroundStyle(.orange)
                         .changeEffect(
                             .spray(origin: .center) {
-                                Text("🔥").font(.system(size: 10))
+                                Text("🔥").font(.system(size: 14))
                             },
                             value: animState.streakTrigger
                         )
-                    
+
                     AnimatedNumber(
                         value: vm.profile.currentStreak,
-                        font: .system(size: 9, weight: .bold),
+                        font: .system(size: 13, weight: .bold),
                         color: .primary
                     )
                 }
@@ -165,7 +165,7 @@ struct DynamicIslandHeaderView: View {
     private var energyBar: some View {
         HStack(spacing: 3) {
             Image(systemName: "bolt.fill")
-                .font(.system(size: 7))
+                .font(.system(size: 11))
                 .foregroundStyle(energyColor)
 
             GeometryReader { geo in
@@ -180,7 +180,7 @@ struct DynamicIslandHeaderView: View {
             .frame(width: 30, height: 4)
 
             Text("\(Int(vm.profile.currentEnergy))%")
-                .font(.system(size: 8, weight: .medium, design: .monospaced))
+                .font(.system(size: 12, weight: .medium, design: .monospaced))
                 .foregroundStyle(energyColor)
         }
     }

@@ -9,14 +9,14 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 12) {
             Text(CatFaces.page.home)
-                .font(.system(size: 48))
+                .font(.system(size: 56))
             Text("CATS")
-                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .font(.system(size: 32, weight: .bold, design: .rounded))
             Text("Cognitive-Aware Task Scheduler")
-                .font(.system(size: 14, design: .rounded))
+                .font(.system(size: 18, design: .rounded))
                 .foregroundStyle(.secondary)
             Text("Running in the Dynamic Island above")
-                .font(.system(size: 11))
+                .font(.system(size: 15))
                 .foregroundStyle(.tertiary)
         }
         .frame(width: 300, height: 200)

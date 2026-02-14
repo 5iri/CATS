@@ -56,14 +56,14 @@ struct TaskRowView: View {
     private var taskTitleRow: some View {
         HStack(spacing: 5) {
             Text(task.title)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .lineLimit(1)
                 .strikethrough(task.status == .completed)
                 .foregroundStyle(task.status == .completed ? .secondary : .primary)
 
             if task.status == .inProgress {
                 Text("ACTIVE")
-                    .font(.system(size: 7, weight: .bold))
+                    .font(.system(size: 11, weight: .bold))
                     .padding(.horizontal, 4)
                     .padding(.vertical, 1)
                     .background(.blue.opacity(0.3))
@@ -72,7 +72,7 @@ struct TaskRowView: View {
             }
 
             Text(difficultyBadge)
-                .font(.system(size: 7, weight: .bold, design: .rounded))
+                .font(.system(size: 11, weight: .bold, design: .rounded))
                 .foregroundStyle(loadColor.opacity(0.9))
                 .padding(.horizontal, 5)
                 .padding(.vertical, 1)
@@ -84,11 +84,11 @@ struct TaskRowView: View {
     private var taskMetaRow: some View {
         HStack(spacing: 6) {
             Image(systemName: task.category.icon)
-                .font(.system(size: 9))
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
 
             Text(task.category.rawValue)
-                .font(.system(size: 9))
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
 
             if task.status == .inProgress {
@@ -96,7 +96,7 @@ struct TaskRowView: View {
                     .foregroundStyle(.secondary)
 
                 Text(deadlineText)
-                    .font(.system(size: 9, design: .monospaced))
+                    .font(.system(size: 13, design: .monospaced))
                     .foregroundStyle(deadlineColor)
             }
 
@@ -114,7 +114,7 @@ struct TaskRowView: View {
                 .fill(bandwidthMatchColor)
                 .frame(width: 4, height: 4)
             Text("\(Int(bandwidthMatch * 100))%")
-                .font(.system(size: 7, weight: .bold, design: .monospaced))
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
         }
         .foregroundStyle(bandwidthMatchColor)
         .padding(.horizontal, 4)
@@ -126,9 +126,9 @@ struct TaskRowView: View {
     private var xpEstimateLabel: some View {
         HStack(spacing: 2) {
             Image(systemName: "star.fill")
-                .font(.system(size: 6))
+                .font(.system(size: 10))
             Text("~\(xpEstimate)")
-                .font(.system(size: 8, weight: .medium))
+                .font(.system(size: 12, weight: .medium))
         }
         .foregroundStyle(.yellow.opacity(0.8))
     }
@@ -138,7 +138,7 @@ struct TaskRowView: View {
         if task.status == .inProgress {
             VStack(alignment: .trailing, spacing: 3) {
                 Text(task.timeRemainingFormatted)
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .font(.system(size: 15, weight: .bold, design: .monospaced))
                     .foregroundStyle(deadlineColor)
                     .changeEffect(
                         .shake(rate: .fast),
@@ -206,7 +206,7 @@ struct TaskRowView: View {
                 .rotationEffect(.degrees(-90))
 
             Text("\(task.cognitiveLoad)")
-                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .font(.system(size: 15, weight: .bold, design: .rounded))
                 .foregroundStyle(loadColor)
         }
     }
