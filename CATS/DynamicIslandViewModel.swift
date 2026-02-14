@@ -32,17 +32,17 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
     var notchOpenedSize: CGSize {
         switch contentType {
         case .chat:
-            return CGSize(width: 600, height: 400)
+            return CGSize(width: 700, height: 480)
         case .deepWork:
-            return CGSize(width: 600, height: 300)
+            return CGSize(width: 700, height: 360)
         case .settings:
-            return CGSize(width: 600, height: 380)
+            return CGSize(width: 700, height: 450)
         default:
-            return CGSize(width: 600, height: 180)
+            return CGSize(width: 700, height: 210)
         }
     }
 
-    let notchDropdownSize: CGSize = .init(width: 600, height: 420)
+    let notchDropdownSize: CGSize = .init(width: 700, height: 500)
     let dropDetectorRange: CGFloat = 32
 
     enum Status: String, Codable, Hashable, Equatable {
