@@ -87,58 +87,24 @@ struct TaskRowView: View {
                 .font(.system(size: 9))
                 .foregroundStyle(.secondary)
 
-            // Time slot: "2:30–3:00 PM" or fallback to deadline
-            if let start = scheduledStart, task.status != .completed {
-                timeSlotLabel(start: start)
-            } else {
+            Text(task.category.rawValue)
+                .font(.system(size: 9))
+                .foregroundStyle(.secondary)
+
+            if task.status == .inProgress {
+                Text("·")
+                    .foregroundStyle(.secondary)
+
                 Text(deadlineText)
                     .font(.system(size: 9, design: .monospaced))
                     .foregroundStyle(deadlineColor)
             }
-
-            // Duration pill
-            durationPill
 
             if task.status != .completed {
                 bandwidthPill
             }
 
             xpEstimateLabel
-        }
-    }
-
-    private func timeSlotLabel(start: Date) -> some View {
-        let end = start.addingTimeInterval(Double(task.estimatedMinutes) * 60)
-        let fmt = DateFormatter()
-        fmt.dateFormat = "h:mm"
-        let fmtEnd = DateFormatter()
-        fmtEnd.dateFormat = "h:mm a"
-
-        return HStack(spacing: 2) {
-            Image(systemName: "clock")
-                .font(.system(size: 7))
-                .foregroundStyle(.secondary)
-            Text("\(fmt.string(from: start))–\(fmtEnd.string(from: end))")
-                .font(.system(size: 9, weight: .medium, design: .monospaced))
-                .foregroundStyle(deadlineColor)
-        }
-    }
-
-    private var durationPill: some View {
-        Text(task.durationLabel)
-            .font(.system(size: 7, weight: .bold, design: .monospaced))
-            .foregroundStyle(durationColor)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 1)
-            .background(durationColor.opacity(0.12))
-            .clipShape(Capsule())
-    }
-
-    private var durationColor: Color {
-        switch task.estimatedMinutes {
-        case 15: return .green
-        case 30: return .blue
-        default: return .purple
         }
     }
 
@@ -167,18 +133,19 @@ struct TaskRowView: View {
         .foregroundStyle(.yellow.opacity(0.8))
     }
 
+    @ViewBuilder
     private var countdownSection: some View {
-        VStack(alignment: .trailing, spacing: 3) {
-            Text(task.timeRemainingFormatted)
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .foregroundStyle(deadlineColor)
-                .changeEffect(
-                    .shake(rate: .fast),
-                    value: task.isOverdue ? 1 : 0,
-                    isEnabled: task.isOverdue
-                )
+        if task.status == .inProgress {
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(task.timeRemainingFormatted)
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .foregroundStyle(deadlineColor)
+                    .changeEffect(
+                        .shake(rate: .fast),
+                        value: task.isOverdue ? 1 : 0,
+                        isEnabled: task.isOverdue
+                    )
 
-            if task.status != .completed {
                 progressBar
             }
         }

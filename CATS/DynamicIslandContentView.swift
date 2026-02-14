@@ -38,42 +38,7 @@ struct DynamicIslandContentView: View {
 
     private var tasksOverview: some View {
         VStack(spacing: 8) {
-            if vm.taskStore.activeTasks.isEmpty {
-                emptyTasksView
-            } else {
-                // Quick task summary
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(vm.taskStore.activeTasks.prefix(4)) { task in
-                            taskCard(task)
-                        }
-                    }
-                }
-
-                // Cognitive bandwidth meter
-                bandwidthMeter
-
-                // Smart suggestion
-                if let suggestion = smartSuggestion {
-                    HStack(spacing: 6) {
-                        Text(suggestion.cat)
-                            .font(.system(size: 12))
-                        Text(suggestion.text)
-                            .font(.system(size: 9, design: .rounded))
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        if suggestion.isAI {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 8))
-                                .foregroundStyle(.purple.opacity(0.6))
-                        }
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-                }
-            }
+            emptyTasksView
         }
     }
 

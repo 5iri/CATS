@@ -7,60 +7,37 @@ import SwiftUI
 import Pow
 
 struct CountdownPillView: View {
+    enum Segment {
+        case full
+        case catOnly
+        case infoOnly
+    }
+
     @ObservedObject var taskStore: TaskStore
     @ObservedObject var profile: CognitiveProfile
+    var segment: Segment = .full
 
     @State private var currentCat: String = CatFaces.page.home
     @State private var catTimer: Timer?
     @State private var urgencyPulse: Int = 0
 
     var body: some View {
-        HStack(spacing: 8) {
-            // Cat face on the left with bounce transition
-            Text(currentCat)
-                .font(.system(size: 11))
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-                .transition(.catBounce)
-                .id(currentCat)
-
-            // Show Pomodoro timer when deep work session is active
-            if profile.isFocusSessionActive {
-                pomodoroTimerView
-            } else if let task = taskStore.nextDeadlineTask {
-                // Divider dot with pulse for urgent
-                Circle()
-                    .fill(urgencyColor(task))
-                    .frame(width: 4, height: 4)
-                    .changeEffect(
-                        .pulse(shape: Circle().inset(by: -2), count: 2),
-                        value: urgencyPulse,
-                        isEnabled: task.isUrgent
-                    )
-
-                // Task name (truncated)
-                Text(task.title)
-                    .font(.system(size: 10, weight: .medium, design: .rounded))
+        HStack(spacing: showsCat && showsInfo ? 8 : 0) {
+            if showsCat {
+                // Cat face on the left with bounce transition
+                Text(currentCat)
+                    .font(.system(size: 11))
                     .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: 80)
+                    .minimumScaleFactor(catMinimumScaleFactor)
+                    .transition(.catBounce)
+                    .id(currentCat)
+            }
 
-                // Countdown with shake when overdue
-                Text(task.timeRemainingFormatted)
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundStyle(urgencyColor(task))
-                    .changeEffect(
-                        .shake(rate: .fast),
-                        value: task.isOverdue ? 1 : 0,
-                        isEnabled: task.isOverdue
-                    )
-            } else {
-                Text("No tasks")
-                    .font(.system(size: 10, weight: .medium, design: .rounded))
-                    .foregroundStyle(.secondary)
+            if showsInfo {
+                infoContent
             }
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, horizontalPadding)
         .padding(.vertical, 4)
         .onAppear {
             startCatRotation()
@@ -68,6 +45,64 @@ struct CountdownPillView: View {
         .onDisappear {
 
             catTimer?.invalidate()
+        }
+    }
+
+    private var showsCat: Bool {
+        segment != .infoOnly
+    }
+
+    private var showsInfo: Bool {
+        segment != .catOnly
+    }
+
+    private var horizontalPadding: CGFloat {
+        8
+    }
+
+    private var catMinimumScaleFactor: CGFloat {
+        segment == .catOnly ? 1.0 : 0.5
+    }
+
+    @ViewBuilder
+    private var infoContent: some View {
+        // Show Pomodoro timer when deep work session is active
+        if profile.isFocusSessionActive {
+            pomodoroTimerView
+        } else if let task = taskStore.nextDeadlineTask {
+            // Divider dot with pulse for urgent
+            Circle()
+                .fill(urgencyColor(task))
+                .frame(width: 4, height: 4)
+                .changeEffect(
+                    .pulse(shape: Circle().inset(by: -2), count: 2),
+                    value: urgencyPulse,
+                    isEnabled: task.isUrgent
+                )
+
+            // Task name (truncated)
+            Text(task.title)
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: 64, alignment: .leading)
+                .minimumScaleFactor(0.85)
+
+            // Countdown with shake when overdue
+            Text(task.timeRemainingFormatted)
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundStyle(urgencyColor(task))
+                .lineLimit(1)
+                .layoutPriority(1)
+                .changeEffect(
+                    .shake(rate: .fast),
+                    value: task.isOverdue ? 1 : 0,
+                    isEnabled: task.isOverdue
+                )
+        } else {
+            Text("No tasks")
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .foregroundStyle(.secondary)
         }
     }
 

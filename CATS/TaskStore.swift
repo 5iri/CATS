@@ -58,6 +58,15 @@ class TaskStore: ObservableObject {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             if let idx = tasks.firstIndex(where: { $0.id == id }) {
                 let task = tasks[idx]
+                
+                // End focus session if this task was being focused on
+                // Check both focusTaskID match AND if this was an in-progress task with active session
+                if let profile = profile, profile.isFocusSessionActive {
+                    if profile.focusTaskID == id || task.status == .inProgress {
+                        profile.endFocusSession(cognitiveLoad: task.cognitiveLoad)
+                    }
+                }
+                
                 tasks[idx].status = .completed
                 tasks[idx].completedAt = Date()
                 

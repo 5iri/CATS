@@ -38,6 +38,12 @@ struct DeepWorkView: View {
                 startSessionView
             }
         }
+        .onAppear {
+            // Restore selectedTaskID from active focus session
+            if profile.isFocusSessionActive, let focusID = profile.focusTaskID {
+                selectedTaskID = focusID
+            }
+        }
     }
 
     // MARK: - Start Session
@@ -511,7 +517,7 @@ struct DeepWorkView: View {
         if let taskID = selectedTaskID,
            let _ = taskStore.tasks.first(where: { $0.id == taskID })
         {
-            profile.startFocusSession()
+            profile.startFocusSession(taskID: taskID)
             taskStore.startTask(taskID)
         }
 

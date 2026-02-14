@@ -9,9 +9,15 @@ struct DynamicIslandView: View {
     @StateObject var vm: DynamicIslandViewModel
 
     @State var dropTargeting: Bool = false
+    private let popLeftLaneWidth: CGFloat = 96
+    private let popRightLaneWidth: CGFloat = 180
 
     init(vm: DynamicIslandViewModel) {
         _vm = StateObject(wrappedValue: vm)
+    }
+
+    private var poppingNotchWidth: CGFloat {
+        vm.deviceNotchRect.width + popLeftLaneWidth + popRightLaneWidth
     }
 
     var notchSize: CGSize {
@@ -30,7 +36,7 @@ struct DynamicIslandView: View {
             return vm.notchDropdownSize
         case .popping:
             return .init(
-                width: vm.deviceNotchRect.width + 120,
+                width: poppingNotchWidth,
                 height: vm.deviceNotchRect.height
             )
         }
@@ -56,14 +62,22 @@ struct DynamicIslandView: View {
             Group {
                 if vm.status == .popping {
                     HStack(spacing: 0) {
-                        Spacer()
                         CountdownPillView(
                             taskStore: vm.taskStore,
-                            profile: vm.profile
+                            profile: vm.profile,
+                            segment: .catOnly
                         )
-                        .padding(.trailing, 8)
+                        .frame(width: popLeftLaneWidth, alignment: .center)
+                        Color.clear
+                            .frame(width: vm.deviceNotchRect.width)
+                        CountdownPillView(
+                            taskStore: vm.taskStore,
+                            profile: vm.profile,
+                            segment: .infoOnly
+                        )
+                        .frame(width: popRightLaneWidth, alignment: .trailing)
                     }
-                    .frame(width: vm.deviceNotchRect.width + 120, height: vm.deviceNotchRect.height)
+                    .frame(width: poppingNotchWidth, height: vm.deviceNotchRect.height)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     .zIndex(1)
                 }

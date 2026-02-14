@@ -33,8 +33,16 @@ class CognitiveProfile: ObservableObject {
     @PublishedPersist(key: "cats_focusSessionStartTime", defaultValue: 0.0)
     var focusSessionStartTimestamp: Double // 0 means no session
 
+    @PublishedPersist(key: "cats_focusTaskID", defaultValue: "")
+    var focusTaskIDString: String // UUID string of task being focused on
+
     @PublishedPersist(key: "cats_totalFocusMinutesInSession", defaultValue: 0)
     var totalFocusMinutesInSession: Int
+
+    var focusTaskID: UUID? {
+        get { UUID(uuidString: focusTaskIDString) }
+        set { focusTaskIDString = newValue?.uuidString ?? "" }
+    }
 
     private var cancellables = Set<AnyCancellable>()
     private var energyRegenTimer: Timer?
@@ -119,8 +127,9 @@ class CognitiveProfile: ObservableObject {
         Int(focusSessionElapsed / 60)
     }
 
-    func startFocusSession() {
+    func startFocusSession(taskID: UUID? = nil) {
         focusSessionStartTimestamp = Date().timeIntervalSince1970
+        focusTaskID = taskID
         totalFocusMinutesInSession = 0
     }
 
@@ -128,12 +137,14 @@ class CognitiveProfile: ObservableObject {
         let minutes = focusSessionElapsedMinutes
         guard minutes > 0 else {
             focusSessionStartTimestamp = 0
+            focusTaskID = nil
             return
         }
         consumeEnergy(cognitiveLoad: cognitiveLoad, minutes: minutes)
         awardXP(cognitiveLoad: cognitiveLoad, minutes: minutes)
         totalFocusMinutesInSession += minutes
         focusSessionStartTimestamp = 0
+        focusTaskID = nil
         updateStreak()
     }
 
