@@ -130,6 +130,46 @@ extension DynamicIslandViewModel {
             }
             .store(in: &cancellables)
 
+        // Ctrl+Cmd hotkey: single = open chat, double = dropdown (like double-clicking notch)
+        var lastHotKeyTime: Date?
+
+        events.hotKeyToggle
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                let now = Date()
+
+                switch status {
+                case .closed, .popping:
+                    if let last = lastHotKeyTime,
+                       now.timeIntervalSince(last) < 0.4
+                    {
+                        // Double tap -> dropdown (full task list)
+                        lastHotKeyTime = nil
+                        notchDropdown()
+                        hapticSender.send()
+                    } else {
+                        // Single tap -> open to chat (with delay to detect double)
+                        lastHotKeyTime = now
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+                            guard let self else { return }
+                            if (self.status == .closed || self.status == .popping),
+                               let last = lastHotKeyTime, now == last
+                            {
+                                lastHotKeyTime = nil
+                                self.notchOpen(.click)
+                                self.contentType = .chat
+                                self.hapticSender.send()
+                            }
+                        }
+                    }
+                case .opened, .dropdown:
+                    lastHotKeyTime = nil
+                    notchClose()
+                }
+            }
+            .store(in: &cancellables)
+
         $selectedLanguage
             .dropFirst()
             .removeDuplicates()

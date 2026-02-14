@@ -138,6 +138,7 @@ struct DynamicIslandView: View {
                 ),
             value: vm.status
         )
+        .animation(vm.animation, value: vm.contentType)
         .preferredColorScheme(.dark)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }

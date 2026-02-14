@@ -29,7 +29,17 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
         blendDuration: 0.125
     )
 
-    let notchOpenedSize: CGSize = .init(width: 600, height: 180)
+    var notchOpenedSize: CGSize {
+        switch contentType {
+        case .chat:
+            return CGSize(width: 600, height: 360)
+        case .deepWork:
+            return CGSize(width: 600, height: 300)
+        default:
+            return CGSize(width: 600, height: 180)
+        }
+    }
+
     let notchDropdownSize: CGSize = .init(width: 600, height: 420)
     let dropDetectorRange: CGFloat = 32
 
