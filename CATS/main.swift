@@ -51,6 +51,7 @@ do {
 _ = TaskStore.shared
 _ = CognitiveProfile.shared
 _ = CalendarManager.shared
+_ = OpenRouterService.shared
 
 private let delegate = AppDelegate()
 NSApplication.shared.delegate = delegate

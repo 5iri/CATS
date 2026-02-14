@@ -16,14 +16,16 @@ struct TaskRowView: View {
     @State private var completionTrigger: Int = 0
     @State private var isCompleting: Bool = false
 
+    @State private var showXPPreview = false
+
     var body: some View {
         HStack(spacing: 10) {
-            // Cognitive load indicator
-            cognitiveLoadBadge
+            // Cognitive load ring
+            cognitiveLoadRing
 
             // Task info
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 5) {
                     Text(task.title)
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .lineLimit(1)
@@ -39,6 +41,15 @@ struct TaskRowView: View {
                             .clipShape(Capsule())
                             .changeEffect(.shine, value: task.status)
                     }
+
+                    // Difficulty badge
+                    Text(difficultyBadge)
+                        .font(.system(size: 7, weight: .bold, design: .rounded))
+                        .foregroundStyle(loadColor.opacity(0.9))
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(loadColor.opacity(0.12))
+                        .clipShape(Capsule())
                 }
 
                 HStack(spacing: 6) {
@@ -56,13 +67,22 @@ struct TaskRowView: View {
                     Text(deadlineText)
                         .font(.system(size: 9, design: .monospaced))
                         .foregroundStyle(deadlineColor)
+
+                    // XP estimate
+                    HStack(spacing: 2) {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 6))
+                        Text("~\(xpEstimate)")
+                            .font(.system(size: 8, weight: .medium))
+                    }
+                    .foregroundStyle(.yellow.opacity(0.8))
                 }
             }
 
             Spacer()
 
             // Countdown / Status
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: 3) {
                 Text(task.timeRemainingFormatted)
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .foregroundStyle(deadlineColor)
@@ -72,7 +92,7 @@ struct TaskRowView: View {
                         isEnabled: task.isOverdue
                     )
 
-                // Progress based on time passed
+                // Progress bar with glow for urgent
                 if task.status != .completed {
                     progressBar
                 }
@@ -82,9 +102,7 @@ struct TaskRowView: View {
             if task.status != .completed {
                 actionButtons
             } else {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                    .font(.system(size: 14))
+                completedBadge
                     .changeEffect(
                         .spray(origin: .center) {
                             Text("✓").foregroundStyle(.green)
@@ -94,15 +112,19 @@ struct TaskRowView: View {
             }
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.vertical, 7)
         .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(task.isOverdue ? Color.red.opacity(0.1) : Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 10)
+                .fill(task.isOverdue ? Color.red.opacity(0.1) :
+                    task.status == .inProgress ? Color.blue.opacity(0.06) :
+                    Color.white.opacity(0.05))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: 10)
                 .strokeBorder(
-                    task.isUrgent ? Color.red.opacity(0.3) : Color.clear,
+                    task.isUrgent ? Color.red.opacity(0.4) :
+                        task.status == .inProgress ? Color.blue.opacity(0.2) :
+                        Color.clear,
                     lineWidth: 1
                 )
         )
@@ -111,14 +133,62 @@ struct TaskRowView: View {
         .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isCompleting)
     }
 
-    private var cognitiveLoadBadge: some View {
+    // MARK: - Cognitive Load Ring
+
+    private var cognitiveLoadRing: some View {
         ZStack {
+            // Background ring
             Circle()
-                .fill(loadColor.opacity(0.2))
-                .frame(width: 28, height: 28)
+                .stroke(Color.white.opacity(0.1), lineWidth: 3)
+                .frame(width: 30, height: 30)
+
+            // Load ring
+            Circle()
+                .trim(from: 0, to: Double(task.cognitiveLoad) / 10.0)
+                .stroke(
+                    AngularGradient(
+                        colors: [loadColor.opacity(0.5), loadColor],
+                        center: .center
+                    ),
+                    style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                )
+                .frame(width: 30, height: 30)
+                .rotationEffect(.degrees(-90))
+
             Text("\(task.cognitiveLoad)")
                 .font(.system(size: 11, weight: .bold, design: .rounded))
                 .foregroundStyle(loadColor)
+        }
+    }
+
+    // MARK: - Difficulty Badge
+
+    private var difficultyBadge: String {
+        switch task.cognitiveLoad {
+        case 1...2: return "Chill"
+        case 3: return "Easy"
+        case 4...5: return "Steady"
+        case 6: return "Focused"
+        case 7: return "Tough"
+        case 8: return "Intense"
+        case 9: return "Beast"
+        case 10: return "Galaxy Brain"
+        default: return "Unknown"
+        }
+    }
+
+    private var xpEstimate: Int {
+        task.cognitiveLoad * task.estimatedMinutes / 10
+    }
+
+    private var completedBadge: some View {
+        VStack(spacing: 2) {
+            Image(systemName: "checkmark.seal.fill")
+                .foregroundStyle(.green)
+                .font(.system(size: 16))
+            Text("Done!")
+                .font(.system(size: 7, weight: .bold))
+                .foregroundStyle(.green)
         }
     }
 
@@ -158,7 +228,13 @@ struct TaskRowView: View {
                     .frame(height: 3)
 
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(deadlineColor)
+                    .fill(
+                        LinearGradient(
+                            colors: [deadlineColor.opacity(0.6), deadlineColor],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
                     .frame(width: geo.size.width * progress, height: 3)
             }
         }
@@ -169,11 +245,12 @@ struct TaskRowView: View {
         HStack(spacing: 4) {
             if task.status == .pending {
                 Button(action: onStart) {
-                    Image(systemName: "play.circle")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.blue)
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.blue.opacity(0.8))
                 }
                 .buttonStyle(.plain)
+                .help("Start working on this task")
             }
 
             Button(action: {
@@ -184,19 +261,21 @@ struct TaskRowView: View {
                     onComplete()
                 }
             }) {
-                Image(systemName: "checkmark.circle")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.green)
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.green.opacity(0.8))
             }
             .buttonStyle(.plain)
+            .help("Mark as complete")
             .changeEffect(.jump(height: 5), value: completionTrigger)
 
             Button(action: onDelete) {
                 Image(systemName: "xmark.circle")
                     .font(.system(size: 14))
-                    .foregroundStyle(.red.opacity(0.7))
+                    .foregroundStyle(.red.opacity(0.5))
             }
             .buttonStyle(.plain)
+            .help("Remove task")
         }
     }
 }

@@ -8,7 +8,7 @@ import Foundation
 class CognitiveEngine {
     static let shared = CognitiveEngine()
 
-    // MARK: - NL Parsing
+    // MARK: - Parsed Result (enhanced with LLM fields)
 
     struct ParsedTask {
         var title: String
@@ -16,7 +16,17 @@ class CognitiveEngine {
         var cognitiveLoad: Int
         var estimatedMinutes: Int
         var category: TaskCategory
+
+        // LLM-enhanced fields (nil when using fallback)
+        var loadReasoning: String?
+        var motivationalMessage: String?
+        var schedulingSuggestion: String?
+        var difficultyBadge: String?
+        var xpPreview: Int?
+        var isAIPowered: Bool = false
     }
+
+    // MARK: - Keyword Tables (fallback)
 
     private let highLoadKeywords: [(pattern: String, load: Int)] = [
         ("dynamic programming", 9),
@@ -99,6 +109,8 @@ class CognitiveEngine {
         ("in 2 hours", 7200),
         ("in 3 hours", 10800),
     ]
+
+    // MARK: - Keyword-Based Parsing (fallback)
 
     func parseNaturalLanguage(_ input: String) -> ParsedTask {
         let lower = input.lowercased()
@@ -185,7 +197,7 @@ class CognitiveEngine {
 
     // MARK: - Private Helpers
 
-    private func extractDeadline(_ text: String) -> Date {
+    func extractDeadline(_ text: String) -> Date {
         let calendar = Calendar.current
 
         // Check specific day names
@@ -264,7 +276,7 @@ class CognitiveEngine {
         }
     }
 
-    private func inferCategory(_ cognitiveLoad: Int, text: String) -> TaskCategory {
+    func inferCategory(_ cognitiveLoad: Int, text: String) -> TaskCategory {
         if text.contains("review") || text.contains("revise") || text.contains("proofread") {
             return .review
         }

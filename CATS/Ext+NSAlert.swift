@@ -29,7 +29,6 @@ extension NSAlert {
             completion()
         }
     }
-
     static func popError(_ error: Error) {
         popError(error.localizedDescription)
     }

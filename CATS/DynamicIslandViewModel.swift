@@ -32,9 +32,11 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
     var notchOpenedSize: CGSize {
         switch contentType {
         case .chat:
-            return CGSize(width: 600, height: 360)
+            return CGSize(width: 600, height: 400)
         case .deepWork:
             return CGSize(width: 600, height: 300)
+        case .settings:
+            return CGSize(width: 600, height: 380)
         default:
             return CGSize(width: 600, height: 180)
         }

@@ -20,10 +20,16 @@ struct DeepWorkView: View {
     @State private var previousLevel: String = ""
     @State private var xpAnimationTrigger: Int = 0
     @State private var sessionDuration: TimeInterval = 0
+    @State private var xpTicker: Int = 0
+    @State private var xpTimer: Timer?
+    @State private var showSessionComplete = false
+    @State private var sessionXPEarned: Int = 0
 
     var body: some View {
         VStack(spacing: 8) {
-            if breakTimerActive {
+            if showSessionComplete {
+                sessionCompleteView
+            } else if breakTimerActive {
                 breakView
             } else if profile.isFocusSessionActive {
                 activeSessionView
@@ -44,30 +50,33 @@ struct DeepWorkView: View {
             Text("Ready for Deep Work?")
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
 
-            // Stats row with animations
-            HStack(spacing: 16) {
-                statBadge(
+            // Stats row with gamification + animations
+            HStack(spacing: 14) {
+                gamifiedStatBadge(
                     icon: "bolt.fill",
                     value: "\(Int(profile.currentEnergy))%",
                     label: "Energy",
-                    color: energyColor
+                    color: energyColor,
+                    glow: profile.currentEnergy > 80
                 )
                 .energyPulse(isLowEnergy: profile.currentEnergy < 30)
                 
-                statBadge(
+                gamifiedStatBadge(
                     icon: "flame.fill",
                     value: "\(profile.currentStreak)",
                     label: "Streak",
-                    color: .orange
+                    color: .orange,
+                    glow: profile.currentStreak >= 3
                 )
                 .changeEffect(.jump(height: 3), value: profile.currentStreak)
                 
                 ZStack {
-                    statBadge(
+                    gamifiedStatBadge(
                         icon: "star.fill",
                         value: "\(profile.totalXP)",
                         label: "XP",
-                        color: .yellow
+                        color: .yellow,
+                        glow: false
                     )
                     .changeEffect(.shine, value: xpAnimationTrigger)
                     
@@ -78,28 +87,89 @@ struct DeepWorkView: View {
                     .offset(y: -20)
                 }
                 
-                statBadge(
+                gamifiedStatBadge(
                     icon: "clock.fill",
                     value: "\(profile.deepWorkMinutesToday)m",
                     label: "Today",
-                    color: .blue
+                    color: .blue,
+                    glow: profile.deepWorkMinutesToday >= 60
                 )
             }
 
-            // Level progress with glow
-            levelProgressBar
+            // Level progress with enhanced design
+            enhancedLevelBar
+
+            // Peak hour / energy advice
+            if profile.isPeakHour {
+                HStack(spacing: 4) {
+                    Image(systemName: "sun.max.fill")
+                        .font(.system(size: 8))
+                        .foregroundStyle(.yellow)
+                    Text("Peak Hour! Tackle your hardest task now for bonus XP")
+                        .font(.system(size: 9, weight: .medium, design: .rounded))
+                        .foregroundStyle(.yellow.opacity(0.8))
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color.yellow.opacity(0.1))
+                .clipShape(Capsule())
+            }
 
             // Task picker
             if !taskStore.activeTasks.isEmpty {
                 Picker("Focus on:", selection: $selectedTaskID) {
                     Text("Select a task...").tag(nil as UUID?)
                     ForEach(taskStore.activeTasks) { task in
-                        Text("\(task.title) (\(task.estimatedMinutes) mins)")
-                            .tag(task.id as UUID?)
+                        HStack {
+                            Text("\(task.title)")
+                            Text("(\(task.cognitiveLoad)/10 · \(task.estimatedMinutes)m)")
+                                .foregroundStyle(.secondary)
+                        }
+                        .tag(task.id as UUID?)
                     }
                 }
                 .pickerStyle(.menu)
                 .font(.system(size: 11))
+
+                // XP Preview for selected task
+                if let id = selectedTaskID,
+                   let task = taskStore.tasks.first(where: { $0.id == id })
+                {
+                    let previewXP = task.cognitiveLoad * task.estimatedMinutes / 10
+                    let peakBonus = profile.isPeakHour ? 1.5 : 1.0
+                    let streakBonus = 1.0 + Double(min(profile.currentStreak, 7)) * 0.1
+
+                    HStack(spacing: 8) {
+                        HStack(spacing: 3) {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 8))
+                                .foregroundStyle(.yellow)
+                            Text("~\(Int(Double(previewXP) * peakBonus * streakBonus)) XP")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(.yellow)
+                        }
+
+                        if profile.isPeakHour {
+                            Text("1.5x Peak")
+                                .font(.system(size: 7, weight: .bold))
+                                .foregroundStyle(.yellow)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(Color.yellow.opacity(0.15))
+                                .clipShape(Capsule())
+                        }
+
+                        if profile.currentStreak > 0 {
+                            Text("\(String(format: "%.1f", streakBonus))x Streak")
+                                .font(.system(size: 7, weight: .bold))
+                                .foregroundStyle(.orange)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(Color.orange.opacity(0.15))
+                                .clipShape(Capsule())
+                        }
+                    }
+                }
 
                 Button(action: startSession) {
                     HStack {
@@ -109,7 +179,13 @@ struct DeepWorkView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 6)
-                    .background(Color.blue.opacity(0.3))
+                    .background(
+                        LinearGradient(
+                            colors: [.blue.opacity(0.4), .purple.opacity(0.3)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -138,6 +214,22 @@ struct DeepWorkView: View {
                 Text("Focusing on: \(task.title)")
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.secondary)
+            }
+
+            // Live XP ticker
+            HStack(spacing: 12) {
+                HStack(spacing: 3) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.yellow)
+                    Text("+\(xpTicker) XP")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.yellow)
+                        .contentTransition(.numericText())
+                }
+
+                // Flow state indicator
+                flowStateIndicator
             }
 
             // Break suggestion
@@ -178,6 +270,54 @@ struct DeepWorkView: View {
         .padding(4)
     }
 
+    // MARK: - Session Complete
+
+    private var sessionCompleteView: some View {
+        VStack(spacing: 10) {
+            Text(CatFaces.excited.randomElement() ?? "ヾ(*ΦωΦ)ﾉ")
+                .font(.system(size: 28))
+
+            Text("Session Complete!")
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+
+            // XP earned
+            HStack(spacing: 4) {
+                Image(systemName: "star.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.yellow)
+                Text("+\(sessionXPEarned) XP")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(.yellow)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(Color.yellow.opacity(0.15))
+                    .overlay(Capsule().strokeBorder(Color.yellow.opacity(0.3), lineWidth: 1))
+            )
+
+            // Updated level
+            HStack(spacing: 6) {
+                Text(profile.currentLevel.cat)
+                    .font(.system(size: 14))
+                Text(profile.currentLevel.name)
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+            }
+
+            Button(action: { showSessionComplete = false }) {
+                Text("Continue")
+                    .font(.system(size: 11, weight: .semibold))
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 6)
+                    .background(Color.blue.opacity(0.3))
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(4)
+    }
+
     // MARK: - Break View
 
     private var breakView: some View {
@@ -194,13 +334,28 @@ struct DeepWorkView: View {
 
             // Break activity suggestion
             if let activity = profile.breakActivities.randomElement() {
-                Text(activity)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.05))
-                    .clipShape(Capsule())
+                HStack(spacing: 6) {
+                    Image(systemName: "leaf.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.green)
+                    Text(activity)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
+                .background(Color.green.opacity(0.08))
+                .clipShape(Capsule())
+            }
+
+            // Energy recovery preview
+            HStack(spacing: 4) {
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.green)
+                Text("Recovering energy...")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.green.opacity(0.7))
             }
 
             Button(action: endBreak) {
@@ -233,7 +388,30 @@ struct DeepWorkView: View {
         .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 
-    private var levelProgressBar: some View {
+    private var flowStateIndicator: some View {
+        let minutes = profile.focusSessionElapsedMinutes
+        let (label, color): (String, Color) = {
+            if minutes < 10 { return ("Warming Up", .blue) }
+            if minutes < 25 { return ("Focused", .green) }
+            if minutes < 45 { return ("Flow State", .purple) }
+            return ("Deep Flow", .pink)
+        }()
+
+        return HStack(spacing: 3) {
+            Circle()
+                .fill(color)
+                .frame(width: 5, height: 5)
+            Text(label)
+                .font(.system(size: 8, weight: .bold, design: .rounded))
+                .foregroundStyle(color)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(color.opacity(0.12))
+        .clipShape(Capsule())
+    }
+
+    private var enhancedLevelBar: some View {
         VStack(spacing: 2) {
             HStack {
                 Text(profile.currentLevel.cat)
@@ -286,7 +464,7 @@ struct DeepWorkView: View {
         }
     }
 
-    private func statBadge(icon: String, value: String, label: String, color: Color) -> some View {
+    private func gamifiedStatBadge(icon: String, value: String, label: String, color: Color, glow: Bool) -> some View {
         VStack(spacing: 2) {
             HStack(spacing: 2) {
                 Image(systemName: icon)
@@ -299,6 +477,12 @@ struct DeepWorkView: View {
                 .font(.system(size: 7))
                 .foregroundStyle(.secondary)
         }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(glow ? color.opacity(0.1) : Color.clear)
+        )
     }
 
     private var sessionCat: String {
@@ -330,17 +514,49 @@ struct DeepWorkView: View {
             profile.startFocusSession()
             taskStore.startTask(taskID)
         }
+
+        // Start XP ticker
+        xpTicker = 0
+        xpTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
+            DispatchQueue.main.async {
+                let cogLoad = selectedTaskID.flatMap { id in
+                    taskStore.tasks.first { $0.id == id }?.cognitiveLoad
+                } ?? 5
+                let baseXP = cogLoad / 10 + 1
+                let peakBonus = profile.isPeakHour ? 1.5 : 1.0
+                withAnimation {
+                    xpTicker += Int(Double(baseXP) * peakBonus)
+                }
+            }
+        }
     }
 
     private func endSession() {
+        xpTimer?.invalidate()
+        xpTimer = nil
+
         let cogLoad = selectedTaskID.flatMap { id in
             taskStore.tasks.first { $0.id == id }?.cognitiveLoad
         } ?? 5
+
+        let minutes = profile.focusSessionElapsedMinutes
+        let baseXP = cogLoad * minutes / 10
+        let peakBonus = profile.isPeakHour ? 1.5 : 1.0
+        let streakBonus = 1.0 + Double(min(profile.currentStreak, 7)) * 0.1
+        sessionXPEarned = Int(Double(baseXP) * peakBonus * streakBonus)
+
         profile.endFocusSession(cognitiveLoad: cogLoad)
         sessionDuration = 0
+
+        if minutes > 0 {
+            showSessionComplete = true
+        }
     }
 
     private func startBreak() {
+        xpTimer?.invalidate()
+        xpTimer = nil
+
         let cogLoad = selectedTaskID.flatMap { id in
             taskStore.tasks.first { $0.id == id }?.cognitiveLoad
         } ?? 5

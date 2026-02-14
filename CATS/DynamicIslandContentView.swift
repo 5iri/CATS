@@ -50,6 +50,9 @@ struct DynamicIslandContentView: View {
                     }
                 }
 
+                // Cognitive bandwidth meter
+                bandwidthMeter
+
                 // Smart suggestion
                 if let suggestion = smartSuggestion {
                     HStack(spacing: 6) {
@@ -59,6 +62,11 @@ struct DynamicIslandContentView: View {
                             .font(.system(size: 9, design: .rounded))
                             .foregroundStyle(.secondary)
                         Spacer()
+                        if suggestion.isAI {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 8))
+                                .foregroundStyle(.purple.opacity(0.6))
+                        }
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -76,8 +84,93 @@ struct DynamicIslandContentView: View {
             Text("No tasks yet! Click Chat to add one.")
                 .font(.system(size: 11, design: .rounded))
                 .foregroundStyle(.secondary)
+
+            if OpenRouterService.shared.isConfigured {
+                HStack(spacing: 4) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 8))
+                        .foregroundStyle(.purple)
+                    Text("AI-powered task analysis ready")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.purple.opacity(0.7))
+                }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Bandwidth Meter
+
+    private var bandwidthMeter: some View {
+        HStack(spacing: 8) {
+            // Mental bandwidth
+            HStack(spacing: 4) {
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 8))
+                    .foregroundStyle(bandwidthColor)
+                Text("Bandwidth:")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.secondary)
+
+                // Mini bar
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.white.opacity(0.1))
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(bandwidthColor)
+                            .frame(width: geo.size.width * vm.profile.currentEnergy / 100)
+                    }
+                }
+                .frame(width: 40, height: 4)
+
+                Text(bandwidthLabel)
+                    .font(.system(size: 8, weight: .medium))
+                    .foregroundStyle(bandwidthColor)
+            }
+
+            Spacer()
+
+            // Total cognitive load
+            let totalLoad = vm.taskStore.activeTasks.reduce(0) { $0 + $1.cognitiveLoad }
+            HStack(spacing: 3) {
+                Text("Total Load:")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.secondary)
+                Text("\(totalLoad)")
+                    .font(.system(size: 8, weight: .bold, design: .monospaced))
+                    .foregroundStyle(totalLoad > 30 ? .red : totalLoad > 20 ? .orange : .green)
+            }
+
+            // Today's XP
+            HStack(spacing: 2) {
+                Image(systemName: "star.fill")
+                    .font(.system(size: 7))
+                    .foregroundStyle(.yellow)
+                Text("\(vm.profile.totalXP) XP")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(.yellow.opacity(0.8))
+            }
+        }
+        .padding(.horizontal, 8)
+    }
+
+    private var bandwidthColor: Color {
+        switch vm.profile.currentEnergy {
+        case 70...100: return .green
+        case 40..<70: return .yellow
+        default: return .red
+        }
+    }
+
+    private var bandwidthLabel: String {
+        switch vm.profile.currentEnergy {
+        case 80...100: return "Peak"
+        case 60..<80: return "Good"
+        case 40..<60: return "Mid"
+        case 20..<40: return "Low"
+        default: return "!"
+        }
     }
 
     private func taskCard(_ task: CATSTask) -> some View {
@@ -97,6 +190,17 @@ struct DynamicIslandContentView: View {
                 Text(task.timeRemainingFormatted)
                     .font(.system(size: 9, weight: .medium, design: .monospaced))
                     .foregroundStyle(urgencyColor(task))
+
+                Spacer()
+
+                // XP badge
+                HStack(spacing: 1) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 5))
+                    Text("~\(task.cognitiveLoad * task.estimatedMinutes / 10)")
+                        .font(.system(size: 7, weight: .medium))
+                }
+                .foregroundStyle(.yellow.opacity(0.7))
             }
         }
         .padding(.horizontal, 10)
@@ -131,13 +235,13 @@ struct DynamicIslandContentView: View {
         return .secondary
     }
 
-    private var smartSuggestion: (cat: String, text: String)? {
+    private var smartSuggestion: (cat: String, text: String, isAI: Bool)? {
         let profile = vm.profile
 
         // Break suggestion
         let breakCheck = CognitiveEngine.shared.shouldSuggestBreak(profile: profile)
         if breakCheck.shouldBreak {
-            return (breakCheck.cat, breakCheck.message)
+            return (breakCheck.cat, breakCheck.message, false)
         }
 
         // Peak hour suggestion
@@ -146,7 +250,8 @@ struct DynamicIslandContentView: View {
         {
             return (
                 CatFaces.page.peakHour,
-                "Peak hour! Great time for \"\(highTask.title)\" (load: \(highTask.cognitiveLoad)/10)"
+                "Peak hour! Great time for \"\(highTask.title)\" (load: \(highTask.cognitiveLoad)/10)",
+                OpenRouterService.shared.isConfigured
             )
         }
 
@@ -154,7 +259,8 @@ struct DynamicIslandContentView: View {
         if profile.currentEnergy < 30 {
             return (
                 CatFaces.page.lowEnergy,
-                "Energy low at \(Int(profile.currentEnergy))%. Consider a break or light tasks."
+                "Energy low at \(Int(profile.currentEnergy))%. Consider a break or light tasks.",
+                false
             )
         }
 

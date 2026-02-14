@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1B2C3D4E5F647890ABCDEF0 /* OpenRouterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E1D2C3B4A596870FEDCBA1 /* OpenRouterService.swift */; };
 		0C76F63E78764A28A3034B5E /* CatFaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE6358ABB7C04522A92E09D1 /* CatFaces.swift */; };
 		10EF9E9930B0EE3D9117008B /* GamificationAnimations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52EAC26A85059DCFF744702E /* GamificationAnimations.swift */; };
 		55B850917AE74B8E8BBC67D0 /* TaskStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 866DF466A12A4249A12B6233 /* TaskStore.swift */; };
@@ -79,6 +80,7 @@
 
 /* Begin PBXFileReference section */
 		0A3290CDA3C84DAE90A26C86 /* CATSTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CATSTask.swift; sourceTree = "<group>"; };
+		F0E1D2C3B4A596870FEDCBA1 /* OpenRouterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenRouterService.swift; sourceTree = "<group>"; };
 		144E485B7C6944BA95C299C9 /* CognitiveEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CognitiveEngine.swift; sourceTree = "<group>"; };
 		1C961F4CB7114A4AB556646B /* TaskListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskListView.swift; sourceTree = "<group>"; };
 		35D70E7ABEA043B9972F6978 /* CognitiveProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CognitiveProfile.swift; sourceTree = "<group>"; };
@@ -216,6 +218,7 @@
 				35D70E7ABEA043B9972F6978 /* CognitiveProfile.swift */,
 				866DF466A12A4249A12B6233 /* TaskStore.swift */,
 				144E485B7C6944BA95C299C9 /* CognitiveEngine.swift */,
+				F0E1D2C3B4A596870FEDCBA1 /* OpenRouterService.swift */,
 				EC063E6F84184127B4BD8937 /* CalendarManager.swift */,
 				1C961F4CB7114A4AB556646B /* TaskListView.swift */,
 				BE22E8D5398A4725AE62ACC1 /* TaskRowView.swift */,
@@ -430,6 +433,7 @@
 				8A2E77E32EDF4581816258A7 /* CognitiveProfile.swift in Sources */,
 				55B850917AE74B8E8BBC67D0 /* TaskStore.swift in Sources */,
 				66A19A9A3ABC4D8EA0072963 /* CognitiveEngine.swift in Sources */,
+				A1B2C3D4E5F647890ABCDEF0 /* OpenRouterService.swift in Sources */,
 				975F841E02624701945E1475 /* CalendarManager.swift in Sources */,
 				CCB7697461D348E5BC49F6B7 /* TaskListView.swift in Sources */,
 				65B2C52AEDE04F3FB6CB259D /* TaskRowView.swift in Sources */,
