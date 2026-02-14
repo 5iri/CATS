@@ -30,7 +30,7 @@ struct DynamicIslandView: View {
             return vm.notchDropdownSize
         case .popping:
             return .init(
-                width: vm.deviceNotchRect.width + 60,
+                width: vm.deviceNotchRect.width + 120,
                 height: vm.deviceNotchRect.height
             )
         }
@@ -55,10 +55,15 @@ struct DynamicIslandView: View {
             // Popping state: show countdown pill preview
             Group {
                 if vm.status == .popping {
-                    CountdownPillView(
-                        taskStore: vm.taskStore,
-                        profile: vm.profile
-                    )
+                    HStack(spacing: 0) {
+                        Spacer()
+                        CountdownPillView(
+                            taskStore: vm.taskStore,
+                            profile: vm.profile
+                        )
+                        .padding(.trailing, 8)
+                    }
+                    .frame(width: vm.deviceNotchRect.width + 120, height: vm.deviceNotchRect.height)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     .zIndex(1)
                 }
