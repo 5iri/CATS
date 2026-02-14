@@ -89,12 +89,21 @@ struct DynamicIslandHeaderView: View {
             }
 
             // Navigation buttons
-            Button(action: { vm.showSettings() }) {
-                Image(systemName: "gearshape")
+            Button(action: { vm.notchDropdown() }) {
+                Image(systemName: "list.bullet")
                     .font(.system(size: 12))
-                    .foregroundStyle(vm.contentType == .settings ? .white : .secondary)
+                    .foregroundStyle(vm.status == .dropdown ? .white : .secondary)
             }
             .buttonStyle(.plain)
+            .help("Tasks")
+
+            Button(action: { vm.showDeepWork() }) {
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 12))
+                    .foregroundStyle(vm.contentType == .deepWork ? .white : .secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Deep Work")
 
             Button(action: { vm.showChat() }) {
                 Image(systemName: "message")
@@ -102,6 +111,15 @@ struct DynamicIslandHeaderView: View {
                     .foregroundStyle(vm.contentType == .chat ? .white : .secondary)
             }
             .buttonStyle(.plain)
+            .help("Chat")
+
+            Button(action: { vm.showSettings() }) {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 12))
+                    .foregroundStyle(vm.contentType == .settings ? .white : .secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Settings")
         }
         .animation(vm.animation, value: vm.contentType)
         .onAppear {

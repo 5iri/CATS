@@ -412,6 +412,9 @@
         }
       }
     },
+    "Back" : {
+
+    },
     "Bandwidth" : {
 
     },
@@ -472,6 +475,9 @@
           }
         }
       }
+    },
+    "Chat" : {
+
     },
     "Chat or add a task..." : {
 
@@ -565,6 +571,9 @@
           }
         }
       }
+    },
+    "Deep Work" : {
+
     },
     "Dismiss" : {
 
@@ -1324,7 +1333,6 @@
 
     },
     "Settings" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1405,6 +1413,9 @@
 
     },
     "Take Break" : {
+
+    },
+    "Tasks" : {
 
     },
     "The language has been changed. The app will restart for the changes to take effect." : {

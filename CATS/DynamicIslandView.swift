@@ -99,6 +99,14 @@ struct DynamicIslandView: View {
                     VStack(spacing: 0) {
                         // Mini header
                         HStack {
+                            Button(action: { vm.notchOpen(.click) }) {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Back")
+
                             Text("CATS")
                                 .font(.system(size: 11, weight: .bold, design: .rounded))
                             Text(CatFaces.page.dropdown)

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>NSCalendarsUsageDescription</key>
+	<string>CATS needs access to your calendar to schedule and sync your tasks with the iPhone Calendar app.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>CATS needs full calendar access to create, update, and manage your task events in the Calendar app.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>CATS can optionally sync tasks with Reminders for better task management.</string>
+</dict>
+</plist>

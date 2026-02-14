@@ -19,11 +19,12 @@ struct DeepWorkView: View {
     @State private var breakTimer: Timer?
     @State private var previousLevel: String = ""
     @State private var xpAnimationTrigger: Int = 0
-    @State private var sessionDuration: TimeInterval = 0
     @State private var xpTicker: Int = 0
     @State private var xpTimer: Timer?
     @State private var showSessionComplete = false
     @State private var sessionXPEarned: Int = 0
+
+    private let pomodoroDuration: TimeInterval = 25 * 60 // 25-min Pomodoro
 
     var body: some View {
         VStack(spacing: 8) {
@@ -501,16 +502,15 @@ struct DeepWorkView: View {
     }
 
     private var remainingTime: TimeInterval {
-        max(0, sessionDuration - profile.focusSessionElapsed)
+        max(0, pomodoroDuration - profile.focusSessionElapsed)
     }
 
     // MARK: - Actions
 
     private func startSession() {
         if let taskID = selectedTaskID,
-           let task = taskStore.tasks.first(where: { $0.id == taskID })
+           let _ = taskStore.tasks.first(where: { $0.id == taskID })
         {
-            sessionDuration = TimeInterval(task.estimatedMinutes * 60)
             profile.startFocusSession()
             taskStore.startTask(taskID)
         }
@@ -546,7 +546,6 @@ struct DeepWorkView: View {
         sessionXPEarned = Int(Double(baseXP) * peakBonus * streakBonus)
 
         profile.endFocusSession(cognitiveLoad: cogLoad)
-        sessionDuration = 0
 
         if minutes > 0 {
             showSessionComplete = true
