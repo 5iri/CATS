@@ -2,10 +2,11 @@ import Foundation
 
 enum WorkType: String, CaseIterable {
     case light = "Light Work"
-    case deep = "Deep Work"
+    case deep  = "Deep Work"
 }
 
-struct Task: Identifiable {
+// Renamed from Task → ScheduledTask to avoid collision with Swift.Task (concurrency)
+struct ScheduledTask: Identifiable {
     let id = UUID()
     var title: String
     var workType: WorkType

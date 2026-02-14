@@ -2,23 +2,18 @@ import SwiftUI
 import EventKit
 
 struct ContentView: View {
-    @State private var tasks: [Task] = []
+    @StateObject private var app = AppState()
+
+    @State private var tasks: [ScheduledTask] = []
+    @State private var completedTasks: [ScheduledTask] = []
     @State private var showingAddTask = false
-    @State private var completedTasks: [Task] = []
     @State private var showingCalendar = false
     @State private var showingSettings = false
+    @State private var showingChat = false
     @State private var currentMotivationMessage = ""
     @State private var showingTimerView = false
-    @State private var selectedTask: Task?
-    @State private var isChatExpanded = true
-    
-    @StateObject private var calendarManager = CalendarManager()
-    @StateObject private var settingsManager = SettingsManager()
-    @StateObject private var chatManager: ChatManager = {
-        let sm = SettingsManager()
-        return ChatManager(settingsManager: sm)
-    }()
-    
+    @State private var selectedTask: ScheduledTask?
+
     let motivationMessages = [
         "Peak hour! Perfect time to crush your tasks",
         "Energy levels optimal! Time to get things done",
@@ -31,15 +26,14 @@ struct ContentView: View {
         "Perfect conditions for deep work ahead",
         "Your future self will thank you for working now"
     ]
-    
-    var activeTasks: [Task] { tasks.filter { !$0.isCompleted } }
+
+    var activeTasks: [ScheduledTask] { tasks.filter { !$0.isCompleted } }
     var totalLoad: Int { activeTasks.reduce(0) { $0 + $1.loadPoints } }
-    
+
     var energyPercentage: Int {
-        let drain = activeTasks.count * 5
-        return max(0, min(100, 100 - drain))
+        max(0, min(100, 100 - activeTasks.count * 5))
     }
-    
+
     var energyEmoji: String {
         switch energyPercentage {
         case 80...100: return "(=^･ω･^=)"
@@ -49,68 +43,82 @@ struct ContentView: View {
         default:       return "(=ω=)"
         }
     }
-    
+
     var bandwidthStatus: String {
         let h = Calendar.current.component(.hour, from: Date())
         return (h >= 9 && h <= 12) || (h >= 14 && h <= 17) ? "Peak" : "Off-Peak"
     }
-    
-    var bandwidthEmoji: String { bandwidthStatus == "Peak" ? "(ΦωΦ)" : "(=①ω①=)" }
-    
+
+    var bandwidthEmoji: String {
+        bandwidthStatus == "Peak" ? "(ΦωΦ)" : "(=①ω①=)"
+    }
+
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottomTrailing) {
+
             Color.black.ignoresSafeArea()
-            
+                .onTapGesture {
+                    UIApplication.shared.sendAction(
+                        #selector(UIResponder.resignFirstResponder),
+                        to: nil, from: nil, for: nil
+                    )
+                }
+
             VStack(spacing: 0) {
+
                 // ── HEADER ──
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
                     Button(action: { showingCalendar = true }) {
                         Image(systemName: "calendar")
-                            .font(.system(size: 18, weight: .medium))
+                            .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.white)
-                            .frame(width: 30, height: 30)
-                            .background(Color(white: 0.15))
-                            .cornerRadius(8)
+                            .frame(width: 28, height: 28)
+                            .background(Color(white: 0.18))
+                            .cornerRadius(7)
                     }
-                    
+
                     Text("CATS")
-                        .font(.system(size: 24, weight: .bold))
+                        .font(.system(size: 22, weight: .bold))
                         .foregroundColor(.white)
-                    
+
                     Spacer()
-                    
-                    HStack(spacing: 5) {
-                        Image(systemName: "star.fill").foregroundColor(.yellow).font(.system(size: 13))
-                        Text("\(settingsManager.totalXP)").font(.system(size: 15, weight: .semibold)).foregroundColor(.white)
+
+                    HStack(spacing: 3) {
+                        Image(systemName: "star.fill")
+                            .foregroundColor(.yellow)
+                            .font(.system(size: 12))
+                        Text("\(app.settings.totalXP)")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white)
                     }
-                    
-                    HStack(spacing: 5) {
-                        Image(systemName: "bolt.fill").foregroundColor(.green).font(.system(size: 13))
-                        GeometryReader { g in
-                            ZStack(alignment: .leading) {
-                                Rectangle().fill(Color.gray.opacity(0.3)).frame(height: 6).cornerRadius(3)
-                                Rectangle().fill(Color.green).frame(width: g.size.width * CGFloat(energyPercentage) / 100, height: 6).cornerRadius(3)
-                            }
+
+                    HStack(spacing: 4) {
+                        Image(systemName: "bolt.fill")
+                            .foregroundColor(.green)
+                            .font(.system(size: 12))
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(width: 52, height: 6)
+                            Capsule()
+                                .fill(Color.green)
+                                .frame(width: 52 * CGFloat(energyPercentage) / 100, height: 6)
                         }
-                        .frame(width: 55, height: 6)
-                        Text("\(energyPercentage)%").font(.system(size: 12, weight: .medium)).foregroundColor(.white)
+                        Text("\(energyPercentage)%")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white)
+                            .fixedSize()
                     }
-                    
+
                     Button(action: { showingSettings = true }) {
                         Image(systemName: "gearshape.fill")
                             .foregroundColor(.gray)
-                            .font(.system(size: 18))
-                    }
-                    
-                    Button(action: { isChatExpanded.toggle() }) {
-                        Image(systemName: "message.fill")
-                            .foregroundColor(isChatExpanded ? .blue : .gray)
-                            .font(.system(size: 18))
+                            .font(.system(size: 17))
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                
+                .padding(.horizontal, 14)
+                .padding(.vertical, 11)
+
                 // ── TASK CARDS ──
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
@@ -119,54 +127,62 @@ struct ContentView: View {
                         }
                         Button(action: { showingAddTask = true }) {
                             VStack(spacing: 6) {
-                                Image(systemName: "plus.circle.fill").font(.system(size: 32)).foregroundColor(.gray)
-                                Text("Add Task").font(.system(size: 13)).foregroundColor(.gray)
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 32))
+                                    .foregroundColor(.gray)
+                                Text("Add Task")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.gray)
                             }
                             .frame(width: 200, height: 80)
                             .background(Color(white: 0.1))
                             .cornerRadius(15)
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 14)
                     .padding(.vertical, 8)
                 }
-                
+
                 // ── BANDWIDTH ──
-                HStack(spacing: 10) {
-                    Image(systemName: "waveform").foregroundColor(.green).font(.system(size: 14))
-                    Text("Bandwidth:").font(.system(size: 13)).foregroundColor(.white)
+                HStack(spacing: 8) {
+                    Image(systemName: "waveform")
+                        .foregroundColor(.green).font(.system(size: 13))
+                    Text("Bandwidth:")
+                        .font(.system(size: 13)).foregroundColor(.white)
                     GeometryReader { g in
                         ZStack(alignment: .leading) {
-                            Rectangle().fill(Color.gray.opacity(0.3)).frame(height: 5).cornerRadius(3)
-                            Rectangle().fill(Color.green).frame(width: bandwidthStatus == "Peak" ? g.size.width : g.size.width * 0.5, height: 5).cornerRadius(3)
+                            Capsule().fill(Color.gray.opacity(0.3)).frame(height: 5)
+                            Capsule().fill(Color.green)
+                                .frame(
+                                    width: bandwidthStatus == "Peak"
+                                        ? g.size.width : g.size.width * 0.5,
+                                    height: 5
+                                )
                         }
                     }
                     .frame(height: 5)
-                    Text(bandwidthStatus).font(.system(size: 13, weight: .semibold)).foregroundColor(.green)
+                    Text(bandwidthStatus)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.green).fixedSize()
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 14).padding(.vertical, 11)
                 .background(Color(white: 0.05))
-                
+
                 // ── MOTIVATION ──
-                HStack {
-                    Text(bandwidthEmoji).font(.system(size: 18))
+                HStack(spacing: 8) {
+                    Text(bandwidthEmoji).font(.system(size: 16))
                     Text(currentMotivationMessage)
-                        .font(.system(size: 13))
-                        .foregroundColor(.gray)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                        .font(.system(size: 13)).foregroundColor(.gray)
+                        .lineLimit(1).minimumScaleFactor(0.75)
                     Spacer()
                     Button(action: { showingAddTask = true }) {
                         Image(systemName: "plus.circle.fill")
-                            .foregroundColor(.blue)
-                            .font(.system(size: 22))
+                            .foregroundColor(.blue).font(.system(size: 20))
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 14).padding(.vertical, 11)
                 .background(Color(white: 0.08))
-                
+
                 // ── TASK LIST ──
                 ScrollView {
                     VStack(spacing: 1) {
@@ -174,7 +190,7 @@ struct ContentView: View {
                             TaskRowView(
                                 task: task,
                                 onComplete: { completeTask(task) },
-                                onDelete: { deleteTask(task) },
+                                onDelete:   { deleteTask(task) },
                                 onPlay: {
                                     selectedTask = task
                                     showingTimerView = true
@@ -188,157 +204,202 @@ struct ContentView: View {
                             )
                         }
                     }
+                    .padding(.bottom, 90)
                 }
-                
-                // ── CHAT SECTION ──
-                if isChatExpanded {
-                    VStack(spacing: 0) {
-                        Divider().background(Color.blue.opacity(0.4))
-                        ChatView(chatManager: chatManager) { result in
-                            createTaskFromChat(result)
-                        }
-                        .frame(height: 280)
-                    }
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-                
+
                 // ── BOTTOM STATS ──
                 HStack {
                     Spacer()
                     Text("Load: \(totalLoad)")
-                        .font(.system(size: 13))
-                        .foregroundColor(.white)
-                    HStack(spacing: 4) {
-                        Image(systemName: "star.fill").foregroundColor(.yellow).font(.system(size: 12))
-                        Text("\(settingsManager.totalXP) XP").font(.system(size: 13, weight: .semibold)).foregroundColor(.white)
+                        .font(.system(size: 12)).foregroundColor(.white)
+                    HStack(spacing: 3) {
+                        Image(systemName: "star.fill")
+                            .foregroundColor(.yellow).font(.system(size: 11))
+                        Text("\(app.settings.totalXP) XP")
+                            .font(.system(size: 12, weight: .semibold)).foregroundColor(.white)
                     }
-                    .padding(.leading, 16)
+                    .padding(.leading, 14)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
+                .padding(.horizontal, 14).padding(.vertical, 9)
                 .background(Color(white: 0.05))
             }
-            
-            // Full-screen timer overlay
+
+            // ── FLOATING PAW BUTTON ──
+            Button(action: { showingChat = true }) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(white: 0.2), Color(white: 0.12)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 60, height: 60)
+                        .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 4)
+
+                    Image(systemName: "pawprint.fill")
+                        .font(.system(size: 26))
+                        .foregroundColor(.white)
+
+                    // Status dot
+                    Circle()
+                        .fill(
+                            app.chat.apiKeyStatus == .valid ? Color.green :
+                            app.chat.apiKeyStatus == .invalid ? Color.red :
+                            Color.gray
+                        )
+                        .frame(width: 10, height: 10)
+                        .offset(x: 20, y: -20)
+                }
+            }
+            .padding(.trailing, 20)
+            .padding(.bottom, 60)
+
+            // ── TIMER OVERLAY ──
             if showingTimerView, let task = selectedTask {
                 TimerView(task: task, onDismiss: {
                     showingTimerView = false
                     selectedTask = nil
                 })
                 .transition(.opacity)
-                .zIndex(1)
+                .zIndex(2)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: isChatExpanded)
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showingAddTask) {
-            AddTaskView(onAdd: { title, workType, hours, minutes, seconds, scheduledDate in
-                addTask(title: title, workType: workType, hours: hours, minutes: minutes, seconds: seconds, scheduledDate: scheduledDate)
-                showingAddTask = false
-            }, onCancel: { showingAddTask = false })
+            AddTaskView(
+                onAdd: { title, workType, hours, minutes, seconds, scheduledDate in
+                    addTask(title: title, workType: workType,
+                            hours: hours, minutes: minutes,
+                            seconds: seconds, scheduledDate: scheduledDate)
+                    showingAddTask = false
+                },
+                onCancel: { showingAddTask = false }
+            )
+        }
+        .sheet(isPresented: $showingChat) {
+            ZStack {
+                Color(white: 0.06).ignoresSafeArea()
+                ChatView(
+                    chatManager: app.chat,
+                    activeTasks: activeTasks,
+                    energyPercentage: energyPercentage,
+                    onTaskCreate: { result in
+                        createTaskFromChat(result)
+                    }
+                )
+                .padding(.horizontal, 12)
+                .padding(.vertical, 16)
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showingCalendar) {
-            CalendarIntegrationView(calendarManager: calendarManager, tasks: tasks)
+            CalendarIntegrationView(calendarManager: app.calendar, tasks: tasks)
         }
         .sheet(isPresented: $showingSettings) {
-            SettingsView(settingsManager: settingsManager, calendarManager: calendarManager)
+            SettingsView(
+                settingsManager: app.settings,
+                calendarManager: app.calendar,
+                chatManager: app.chat
+            )
         }
         .onAppear {
-            calendarManager.requestAccess()
+            app.calendar.requestAccess()
             updateMotivationMessage()
-            // Sync XP from settings
         }
     }
-    
+
+    // MARK: - Helpers
+
     private func updateMotivationMessage() {
         currentMotivationMessage = motivationMessages.randomElement() ?? motivationMessages[0]
     }
-    
+
     private func createTaskFromChat(_ result: TaskCreationResult) {
-        let totalSeconds = result.hours * 3600 + result.minutes * 60 + result.seconds
-        let duration = formatDuration(hours: result.hours, minutes: result.minutes, seconds: result.seconds)
-        let loadPoints = result.workType == .deep ? Int(Double(totalSeconds) / 3600.0 * 3) + 2 : Int(Double(totalSeconds) / 3600.0 * 3)
-        
-        let task = Task(
-            title: result.title,
-            workType: result.workType,
-            loadPoints: max(1, loadPoints),
-            date: Date(),
-            duration: duration,
-            totalSeconds: totalSeconds
+        let total = result.hours * 3600 + result.minutes * 60 + result.seconds
+        let dur   = formatDuration(hours: result.hours, minutes: result.minutes, seconds: result.seconds)
+
+        let task = ScheduledTask(
+            title:        result.title,
+            workType:     result.workType,
+            loadPoints:   max(1, result.cognitiveLoad),
+            date:         Date(),
+            duration:     dur.isEmpty ? "30m" : dur,
+            totalSeconds: total == 0 ? 1800 : total
         )
         tasks.append(task)
-        calendarManager.addTaskToCalendar(task: task)
+        app.calendar.addTaskToCalendar(task: task)
         updateMotivationMessage()
     }
-    
-    private func addTask(title: String, workType: WorkType, hours: Int, minutes: Int, seconds: Int, scheduledDate: Date) {
-        let totalSeconds = hours * 3600 + minutes * 60 + seconds
-        let duration = formatDuration(hours: hours, minutes: minutes, seconds: seconds)
-        let loadPoints = calculateLoadPoints(totalSeconds: totalSeconds, workType: workType)
-        
-        let task = Task(
-            title: title,
-            workType: workType,
-            loadPoints: loadPoints,
-            date: scheduledDate,
-            duration: duration,
-            totalSeconds: totalSeconds
+
+    private func addTask(title: String, workType: WorkType,
+                         hours: Int, minutes: Int, seconds: Int,
+                         scheduledDate: Date) {
+        let total = hours * 3600 + minutes * 60 + seconds
+        let dur   = formatDuration(hours: hours, minutes: minutes, seconds: seconds)
+        let lp    = calculateLoadPoints(totalSeconds: total, workType: workType)
+
+        let task = ScheduledTask(
+            title:        title,
+            workType:     workType,
+            loadPoints:   lp,
+            date:         scheduledDate,
+            duration:     dur,
+            totalSeconds: total
         )
         tasks.append(task)
-        calendarManager.addTaskToCalendar(task: task)
+        app.calendar.addTaskToCalendar(task: task)
         updateMotivationMessage()
     }
-    
+
     private func calculateLoadPoints(totalSeconds: Int, workType: WorkType) -> Int {
-        let hours = Double(totalSeconds) / 3600.0
-        let base = Int(hours * 3)
-        return workType == .deep ? base + 2 : base
+        let h = Double(totalSeconds) / 3600.0
+        return workType == .deep ? Int(h * 3) + 2 : Int(h * 3)
     }
-    
+
     private func formatDuration(hours: Int, minutes: Int, seconds: Int) -> String {
-        if hours > 0 { return "\(hours)h \(minutes)m" }
-        else if minutes > 0 { return "\(minutes)m \(seconds)s" }
-        else { return "\(seconds)s" }
+        if hours > 0   { return "\(hours)h \(minutes)m" }
+        if minutes > 0 { return "\(minutes)m \(seconds)s" }
+        return "\(seconds)s"
     }
-    
-    private func completeTask(_ task: Task) {
-        if let index = tasks.firstIndex(where: { $0.id == task.id }) {
-            tasks[index].isCompleted = true
-            completedTasks.append(tasks[index])
-            tasks.remove(at: index)
-            let xpGain = max(10, task.loadPoints * 10)
-            settingsManager.totalXP += xpGain
-            settingsManager.totalTasksCompleted += 1
-            if task.workType == .deep { settingsManager.deepWorkSessions += 1 }
-            calendarManager.completeTaskInCalendar(task: task)
-        }
+
+    private func completeTask(_ task: ScheduledTask) {
+        guard let i = tasks.firstIndex(where: { $0.id == task.id }) else { return }
+        tasks[i].isCompleted = true
+        completedTasks.append(tasks[i])
+        tasks.remove(at: i)
+        app.settings.totalXP += max(10, task.loadPoints * 10)
+        app.settings.totalTasksCompleted += 1
+        if task.workType == .deep { app.settings.deepWorkSessions += 1 }
+        app.calendar.completeTaskInCalendar(task: task)
     }
-    
-    private func deleteTask(_ task: Task) {
+
+    private func deleteTask(_ task: ScheduledTask) {
         tasks.removeAll { $0.id == task.id }
         completedTasks.removeAll { $0.id == task.id }
-        calendarManager.removeTaskFromCalendar(task: task)
+        app.calendar.removeTaskFromCalendar(task: task)
     }
 }
 
+// MARK: - Task Card
+
 struct TaskCardView: View {
-    let task: Task
+    let task: ScheduledTask
     let onComplete: () -> Void
-    
     var statusColor: Color { task.workType == .deep ? .orange : .green }
-    
+
     var body: some View {
         HStack(spacing: 10) {
             Circle().fill(statusColor).frame(width: 10, height: 10)
             VStack(alignment: .leading, spacing: 4) {
                 Text(task.title)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                HStack(spacing: 6) {
-                    Image(systemName: "clock").font(.system(size: 11)).foregroundColor(.gray)
-                    Text(task.duration).font(.system(size: 13)).foregroundColor(.gray)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white).lineLimit(1)
+                HStack(spacing: 5) {
+                    Image(systemName: "clock").font(.system(size: 10)).foregroundColor(.gray)
+                    Text(task.duration).font(.system(size: 12)).foregroundColor(.gray)
                     Spacer()
                     Image(systemName: "star.fill").font(.system(size: 9)).foregroundColor(.yellow)
                     Text("~\(task.loadPoints * 10)").font(.system(size: 11)).foregroundColor(.yellow)
@@ -346,12 +407,10 @@ struct TaskCardView: View {
             }
         }
         .padding(12)
-        .frame(width: 200, height: 80)
+        .frame(width: 200, height: 76)
         .background(Color(white: 0.1))
         .cornerRadius(14)
     }
 }
 
-#Preview {
-    ContentView()
-}
+#Preview { ContentView() }
