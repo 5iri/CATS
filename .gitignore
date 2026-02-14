@@ -3,3 +3,6 @@
 
 # XCode user files
 *.xcuserstate
+
+# macOS
+.DS_Store

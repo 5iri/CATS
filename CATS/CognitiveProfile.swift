@@ -91,7 +91,17 @@ class CognitiveProfile: ObservableObject {
         let peakBonus = isPeakHour ? 1.5 : 1.0
         let streakBonus = 1.0 + Double(min(currentStreak, 7)) * 0.1
         let xp = Int(Double(baseXP) * peakBonus * streakBonus)
+        totalXP += max(1, xp)
+    }
+    
+    /// Award XP for completing a task (not tied to focus session)
+    func awardTaskCompletionXP(cognitiveLoad: Int, estimatedMinutes: Int) {
+        let baseXP = max(5, cognitiveLoad * 3) // Minimum 5 XP per task
+        let peakBonus = isPeakHour ? 1.5 : 1.0
+        let streakBonus = 1.0 + Double(min(currentStreak, 7)) * 0.1
+        let xp = Int(Double(baseXP) * peakBonus * streakBonus)
         totalXP += xp
+        updateStreak()
     }
 
     // MARK: - Focus Session

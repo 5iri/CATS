@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import Pow
 
 struct TaskRowView: View {
     let task: CATSTask
@@ -11,6 +12,9 @@ struct TaskRowView: View {
     let onComplete: () -> Void
     let onStart: () -> Void
     let onDelete: () -> Void
+    
+    @State private var completionTrigger: Int = 0
+    @State private var isCompleting: Bool = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -33,6 +37,7 @@ struct TaskRowView: View {
                             .padding(.vertical, 1)
                             .background(.blue.opacity(0.3))
                             .clipShape(Capsule())
+                            .changeEffect(.shine, value: task.status)
                     }
                 }
 
@@ -61,6 +66,11 @@ struct TaskRowView: View {
                 Text(task.timeRemainingFormatted)
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .foregroundStyle(deadlineColor)
+                    .changeEffect(
+                        .shake(rate: .fast),
+                        value: task.isOverdue ? 1 : 0,
+                        isEnabled: task.isOverdue
+                    )
 
                 // Progress based on time passed
                 if task.status != .completed {
@@ -75,6 +85,12 @@ struct TaskRowView: View {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
                     .font(.system(size: 14))
+                    .changeEffect(
+                        .spray(origin: .center) {
+                            Text("✓").foregroundStyle(.green)
+                        },
+                        value: completionTrigger
+                    )
             }
         }
         .padding(.horizontal, 10)
@@ -90,6 +106,9 @@ struct TaskRowView: View {
                     lineWidth: 1
                 )
         )
+        .breathingGlow(isUrgent: task.isUrgent)
+        .scaleEffect(isCompleting ? 0.95 : 1.0)
+        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isCompleting)
     }
 
     private var cognitiveLoadBadge: some View {
@@ -157,12 +176,20 @@ struct TaskRowView: View {
                 .buttonStyle(.plain)
             }
 
-            Button(action: onComplete) {
+            Button(action: {
+                isCompleting = true
+                completionTrigger += 1
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    isCompleting = false
+                    onComplete()
+                }
+            }) {
                 Image(systemName: "checkmark.circle")
                     .font(.system(size: 14))
                     .foregroundStyle(.green)
             }
             .buttonStyle(.plain)
+            .changeEffect(.jump(height: 5), value: completionTrigger)
 
             Button(action: onDelete) {
                 Image(systemName: "xmark.circle")

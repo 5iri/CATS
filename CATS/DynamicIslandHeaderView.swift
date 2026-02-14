@@ -4,15 +4,32 @@
 //
 
 import SwiftUI
+import Pow
 
 struct DynamicIslandHeaderView: View {
     @StateObject var vm: DynamicIslandViewModel
+    @StateObject private var animState = AnimationState.shared
+    
+    @State private var catFace: String = ""
+    @State private var previousStreak: Int = 0
+    @State private var previousXP: Int = 0
+    @State private var xpGainTrigger: Int = 0
+    @State private var showXPGain: Bool = false
+    @State private var lastXPGain: Int = 0
 
     var body: some View {
         HStack(spacing: 8) {
-            // Cat face based on mood
-            Text(vm.profile.energyMood)
+            // Cat face based on mood with bounce animation
+            Text(catFace)
                 .font(.system(size: 14))
+                .transition(.catBounce)
+                .id(catFace)
+                .changeEffect(
+                    .spray(origin: .center) {
+                        Text("✨").font(.system(size: 10))
+                    },
+                    value: xpGainTrigger
+                )
 
             // CATS title and content type
             Text(headerTitle)
@@ -20,19 +37,55 @@ struct DynamicIslandHeaderView: View {
                 .contentTransition(.numericText())
 
             Spacer()
+            
+            // XP badge with animation
+            ZStack {
+                HStack(spacing: 2) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 7))
+                        .foregroundStyle(.yellow)
+                    Text("\(vm.profile.totalXP)")
+                        .font(.system(size: 8, weight: .bold, design: .monospaced))
+                        .contentTransition(.numericText())
+                        .animation(.snappy, value: vm.profile.totalXP)
+                }
+                .changeEffect(.shine, value: xpGainTrigger)
+                
+                // Floating +XP text
+                if showXPGain {
+                    Text("+\(lastXPGain) XP")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundStyle(.yellow)
+                        .shadow(color: .yellow.opacity(0.5), radius: 4)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .offset(y: -18)
+                }
+            }
 
-            // Energy bar
+            // Energy bar with pulse when low
             energyBar
+                .energyPulse(isLowEnergy: vm.profile.currentEnergy < 30)
 
-            // Streak badge
+            // Streak badge with fire animation
             if vm.profile.currentStreak > 0 {
                 HStack(spacing: 2) {
                     Image(systemName: "flame.fill")
                         .font(.system(size: 8))
                         .foregroundStyle(.orange)
-                    Text("\(vm.profile.currentStreak)")
-                        .font(.system(size: 9, weight: .bold))
+                        .changeEffect(
+                            .spray(origin: .center) {
+                                Text("🔥").font(.system(size: 10))
+                            },
+                            value: animState.streakTrigger
+                        )
+                    
+                    AnimatedNumber(
+                        value: vm.profile.currentStreak,
+                        font: .system(size: 9, weight: .bold),
+                        color: .primary
+                    )
                 }
+                .changeEffect(.jump(height: 5), value: vm.profile.currentStreak)
             }
 
             // Navigation dots
@@ -41,6 +94,35 @@ struct DynamicIslandHeaderView: View {
                 .foregroundStyle(.secondary)
         }
         .animation(vm.animation, value: vm.contentType)
+        .onAppear {
+            catFace = vm.profile.energyMood
+            previousStreak = vm.profile.currentStreak
+            previousXP = vm.profile.totalXP
+        }
+        .onChange(of: vm.profile.energyMood) { _, newMood in
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                catFace = newMood
+            }
+        }
+        .onChange(of: vm.profile.currentStreak) { oldVal, newVal in
+            if newVal > oldVal {
+                animState.triggerStreakAnimation()
+            }
+        }
+        .onChange(of: vm.profile.totalXP) { oldVal, newVal in
+            if newVal > oldVal {
+                lastXPGain = newVal - oldVal
+                xpGainTrigger += 1
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    showXPGain = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        showXPGain = false
+                    }
+                }
+            }
+        }
     }
 
     private var headerTitle: String {

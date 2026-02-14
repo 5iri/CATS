@@ -44,10 +44,19 @@ class TaskStore: ObservableObject {
         tasks.removeAll { $0.id == id }
     }
 
-    func completeTask(_ id: UUID) {
+    func completeTask(_ id: UUID, profile: CognitiveProfile? = nil) {
         if let idx = tasks.firstIndex(where: { $0.id == id }) {
+            let task = tasks[idx]
             tasks[idx].status = .completed
             tasks[idx].completedAt = Date()
+            
+            // Award XP for task completion
+            if let profile = profile {
+                profile.awardTaskCompletionXP(
+                    cognitiveLoad: task.cognitiveLoad,
+                    estimatedMinutes: task.estimatedMinutes
+                )
+            }
         }
     }
 

@@ -59,6 +59,27 @@
     "%lld%%" : {
 
     },
+    "+%lld XP" : {
+
+    },
+    "✓" : {
+
+    },
+    "✨" : {
+
+    },
+    "⭐" : {
+
+    },
+    "🌟" : {
+
+    },
+    "🎉 LEVEL UP! 🎉" : {
+
+    },
+    "🔥" : {
+
+    },
     "1 Day" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -4,17 +4,21 @@
 //
 
 import SwiftUI
+import Pow
 
 struct DeepWorkView: View {
     @ObservedObject var taskStore: TaskStore
     @ObservedObject var profile: CognitiveProfile
     @ObservedObject var vm: DynamicIslandViewModel
+    @StateObject private var animState = AnimationState.shared
 
     @State private var selectedTaskID: UUID?
     @State private var showBreakSuggestion = false
     @State private var breakTimerActive = false
     @State private var breakTimeRemaining: Int = 0
     @State private var breakTimer: Timer?
+    @State private var previousLevel: String = ""
+    @State private var xpAnimationTrigger: Int = 0
 
     var body: some View {
         VStack(spacing: 8) {
@@ -39,7 +43,7 @@ struct DeepWorkView: View {
             Text("Ready for Deep Work?")
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
 
-            // Stats row
+            // Stats row with animations
             HStack(spacing: 16) {
                 statBadge(
                     icon: "bolt.fill",
@@ -47,18 +51,32 @@ struct DeepWorkView: View {
                     label: "Energy",
                     color: energyColor
                 )
+                .energyPulse(isLowEnergy: profile.currentEnergy < 30)
+                
                 statBadge(
                     icon: "flame.fill",
                     value: "\(profile.currentStreak)",
                     label: "Streak",
                     color: .orange
                 )
-                statBadge(
-                    icon: "star.fill",
-                    value: "\(profile.totalXP)",
-                    label: "XP",
-                    color: .yellow
-                )
+                .changeEffect(.jump(height: 3), value: profile.currentStreak)
+                
+                ZStack {
+                    statBadge(
+                        icon: "star.fill",
+                        value: "\(profile.totalXP)",
+                        label: "XP",
+                        color: .yellow
+                    )
+                    .changeEffect(.shine, value: xpAnimationTrigger)
+                    
+                    FloatingXPView(
+                        amount: animState.lastXPGain,
+                        trigger: $animState.xpTrigger
+                    )
+                    .offset(y: -20)
+                }
+                
                 statBadge(
                     icon: "clock.fill",
                     value: "\(profile.deepWorkMinutesToday)m",
@@ -67,7 +85,7 @@ struct DeepWorkView: View {
                 )
             }
 
-            // Level progress
+            // Level progress with glow
             levelProgressBar
 
             // Task picker
@@ -219,32 +237,51 @@ struct DeepWorkView: View {
             HStack {
                 Text(profile.currentLevel.cat)
                     .font(.system(size: 10))
+                    .changeEffect(
+                        .spray(origin: .center) {
+                            Text("⭐").font(.system(size: 8))
+                        },
+                        value: animState.levelUpTrigger
+                    )
                 Text(profile.currentLevel.name)
                     .font(.system(size: 9, weight: .medium))
+                    .changeEffect(.shine, value: animState.levelUpTrigger)
                 Spacer()
                 if let next = profile.nextLevel {
                     Text("\(profile.totalXP)/\(next.xpRequired) XP")
                         .font(.system(size: 9))
                         .foregroundStyle(.secondary)
+                        .contentTransition(.numericText())
+                        .animation(.snappy, value: profile.totalXP)
                 }
             }
 
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white.opacity(0.1))
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(
-                            LinearGradient(
-                                colors: [.blue, .purple],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(width: geo.size.width * profile.levelProgress)
-                }
+            GlowingProgressBar(
+                progress: profile.levelProgress,
+                gradient: [.blue, .purple],
+                height: 6
+            )
+        }
+        .onAppear {
+            previousLevel = profile.currentLevel.name
+        }
+        .onChange(of: profile.currentLevel.name) { oldVal, newVal in
+            if oldVal != newVal && !oldVal.isEmpty {
+                animState.triggerLevelUp(levelName: newVal)
             }
-            .frame(height: 6)
+        }
+        .onChange(of: profile.totalXP) { oldVal, newVal in
+            if newVal > oldVal {
+                animState.triggerXPAnimation(amount: newVal - oldVal)
+                xpAnimationTrigger += 1
+            }
+        }
+        .overlay {
+            LevelUpBannerView(
+                levelName: animState.newLevelName,
+                isShowing: animState.showLevelUpBanner
+            )
+            .offset(y: -50)
         }
     }
 

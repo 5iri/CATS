@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import Pow
 
 struct CountdownPillView: View {
     @ObservedObject var taskStore: TaskStore
@@ -11,20 +12,28 @@ struct CountdownPillView: View {
 
     @State private var currentCat: String = CatFaces.page.home
     @State private var catTimer: Timer?
+    @State private var urgencyPulse: Int = 0
 
     var body: some View {
         HStack(spacing: 8) {
-            // Cat face on the left
+            // Cat face on the left with bounce transition
             Text(currentCat)
                 .font(.system(size: 11))
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
+                .transition(.catBounce)
+                .id(currentCat)
 
             if let task = taskStore.nextDeadlineTask {
-                // Divider dot
+                // Divider dot with pulse for urgent
                 Circle()
                     .fill(urgencyColor(task))
                     .frame(width: 4, height: 4)
+                    .changeEffect(
+                        .ping(shape: Circle().inset(by: -2), count: 2),
+                        value: urgencyPulse,
+                        isEnabled: task.isUrgent
+                    )
 
                 // Task name (truncated)
                 Text(task.title)
@@ -33,10 +42,15 @@ struct CountdownPillView: View {
                     .truncationMode(.tail)
                     .frame(maxWidth: 80)
 
-                // Countdown
+                // Countdown with shake when overdue
                 Text(task.timeRemainingFormatted)
                     .font(.system(size: 10, weight: .bold, design: .monospaced))
                     .foregroundStyle(urgencyColor(task))
+                    .changeEffect(
+                        .shake(rate: .fast),
+                        value: task.isOverdue ? 1 : 0,
+                        isEnabled: task.isOverdue
+                    )
             } else {
                 Text("No tasks")
                     .font(.system(size: 10, weight: .medium, design: .rounded))
@@ -64,9 +78,10 @@ struct CountdownPillView: View {
     private func startCatRotation() {
         catTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
             DispatchQueue.main.async {
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
                     if let task = taskStore.nextDeadlineTask, task.isUrgent {
-                        currentCat = CatFaces.page.urgent
+                        currentCat = CatFaces.stressed.randomElement()!
+                        urgencyPulse += 1
                     } else {
                         currentCat = CatFaces.forMood(energy: profile.currentEnergy)
                     }

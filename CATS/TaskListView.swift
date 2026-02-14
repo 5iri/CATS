@@ -4,11 +4,14 @@
 //
 
 import SwiftUI
+import Pow
 
 struct TaskListView: View {
     @ObservedObject var taskStore: TaskStore
     @ObservedObject var profile: CognitiveProfile
     @ObservedObject var vm: DynamicIslandViewModel
+    
+    @State private var completedTaskTrigger: Int = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -62,6 +65,12 @@ struct TaskListView: View {
         HStack {
             Text(profile.energyMood)
                 .font(.system(size: 14))
+                .changeEffect(
+                    .spray(origin: .center) {
+                        Text("✨").font(.system(size: 10))
+                    },
+                    value: completedTaskTrigger
+                )
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("CATS")
@@ -70,6 +79,8 @@ struct TaskListView: View {
                     Text("\(taskStore.activeTasks.count) tasks")
                         .font(.system(size: 9))
                         .foregroundStyle(.secondary)
+                        .contentTransition(.numericText())
+                        .animation(.snappy, value: taskStore.activeTasks.count)
                     Text("·")
                         .foregroundStyle(.secondary)
                     Text("Energy: \(Int(profile.currentEnergy))%")
@@ -79,6 +90,18 @@ struct TaskListView: View {
             }
 
             Spacer()
+            
+            // XP badge
+            HStack(spacing: 2) {
+                Image(systemName: "star.fill")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.yellow)
+                Text("\(profile.totalXP)")
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .contentTransition(.numericText())
+                    .animation(.snappy, value: profile.totalXP)
+            }
+            .changeEffect(.shine, value: completedTaskTrigger)
 
             // Level badge
             VStack(alignment: .trailing, spacing: 1) {
@@ -95,7 +118,7 @@ struct TaskListView: View {
 
     private var emptyState: some View {
         VStack(spacing: 12) {
-            Text(CatFaces.page.emptyTasks)
+            Text(CatFaces.sleepy.randomElement()!)
                 .font(.system(size: 28))
             Text("No tasks yet")
                 .font(.system(size: 13, weight: .medium, design: .rounded))
@@ -125,10 +148,17 @@ struct TaskListView: View {
         TaskRowView(
             task: task,
             currentTime: taskStore.currentTime,
-            onComplete: { taskStore.completeTask(task.id) },
+            onComplete: {
+                completedTaskTrigger += 1
+                taskStore.completeTask(task.id, profile: profile)
+            },
             onStart: { taskStore.startTask(task.id) },
             onDelete: { taskStore.removeTask(task.id) }
         )
+        .transition(.asymmetric(
+            insertion: .scale.combined(with: .opacity),
+            removal: .move(edge: .trailing).combined(with: .opacity)
+        ))
     }
 
     private var energyColor: Color {
