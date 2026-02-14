@@ -30,11 +30,11 @@ extension DynamicIslandViewModel {
                     } else if deviceNotchRect.insetBy(dx: inset, dy: inset).contains(mouseLocation) {
                         notchClose()
                     } else if headlineOpenedRect.contains(mouseLocation) {
-                        // Cycle through content types
-                        if let nextValue = ContentType(rawValue: contentType.rawValue + 1) {
-                            contentType = nextValue
+                        // Toggle between current view and chat
+                        if contentType == .chat {
+                            contentType = .tasks
                         } else {
-                            contentType = ContentType(rawValue: 0)!
+                            contentType = .chat
                         }
                     }
                 case .dropdown:

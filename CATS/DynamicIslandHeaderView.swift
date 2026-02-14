@@ -89,7 +89,7 @@ struct DynamicIslandHeaderView: View {
             }
 
             // Navigation dots
-            Image(systemName: "ellipsis")
+            Image(systemName: "message")
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
         }
