@@ -10,8 +10,6 @@ import Cocoa
 enum Language: String, CaseIterable, Identifiable, Codable {
     case system = "Follow System"
     case english = "English"
-    case french = "French"
-    case spanish = "Spanish"
 
     var id: String { rawValue }
 
@@ -21,24 +19,12 @@ enum Language: String, CaseIterable, Identifiable, Codable {
 
     func apply() {
         let languageCode: String?
-        let local = Calendar.autoupdatingCurrent.locale?.identifier
-        let region = local?.split(separator: "@").last?.split(separator: "_").last
 
         switch self {
         case .system:
-            if region == "FR" {
-                languageCode = "fr"
-            } else if region == "ES" {
-                languageCode = "es"
-            } else {
-                languageCode = "en"
-            }
+            languageCode = "en"
         case .english:
             languageCode = "en"
-        case .french:
-            languageCode = "fr"
-        case .spanish:
-            languageCode = "es"
         }
 
         Bundle.setLanguage(languageCode)
