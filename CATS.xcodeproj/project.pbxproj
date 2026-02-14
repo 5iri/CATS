@@ -600,27 +600,26 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"CATS/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = CATS/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = CATS;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 2.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rkinnovate.CATS;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
+				                DEVELOPMENT_ASSET_PATHS = "\"CATS/Preview Content\"";
+				                DEVELOPMENT_TEAM = TS7XY47533;
+				                ENABLE_HARDENED_RUNTIME = YES;
+				                ENABLE_PREVIEWS = YES;
+				                GENERATE_INFOPLIST_FILE = YES;
+				                INFOPLIST_FILE = CATS/Info.plist;
+				                INFOPLIST_KEY_CFBundleDisplayName = CATS;
+				                INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				                INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				                LD_RUNPATH_SEARCH_PATHS = (
+				                    "$(inherited)",
+				                    "@executable_path/../Frameworks",
+				                );
+				                MARKETING_VERSION = 2.0.0;
+				                PRODUCT_BUNDLE_IDENTIFIER = com.rkinnovate.CATS;
+				                PRODUCT_NAME = "$(TARGET_NAME)";
+				                SWIFT_EMIT_LOC_STRINGS = YES;
+				                SWIFT_VERSION = 5.0;
+				            };
+				            name = Debug;		};
 		57680E0C2C6789D9000233B9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -631,7 +630,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"CATS/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = TS7XY47533;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

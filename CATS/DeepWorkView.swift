@@ -19,6 +19,7 @@ struct DeepWorkView: View {
     @State private var breakTimer: Timer?
     @State private var previousLevel: String = ""
     @State private var xpAnimationTrigger: Int = 0
+    @State private var sessionDuration: TimeInterval = 0
 
     var body: some View {
         VStack(spacing: 8) {
@@ -93,7 +94,7 @@ struct DeepWorkView: View {
                 Picker("Focus on:", selection: $selectedTaskID) {
                     Text("Select a task...").tag(nil as UUID?)
                     ForEach(taskStore.activeTasks) { task in
-                        Text("\(task.title) (\(task.cognitiveLoad)/10)")
+                        Text("\(task.title) (\(task.estimatedMinutes) mins)")
                             .tag(task.id as UUID?)
                     }
                 }
@@ -127,7 +128,7 @@ struct DeepWorkView: View {
                 .font(.system(size: 18))
 
             // Timer
-            Text(formatElapsed(profile.focusSessionElapsed))
+            Text(formatRemainingTime(remainingTime))
                 .font(.system(size: 24, weight: .bold, design: .monospaced))
                 .foregroundStyle(.white)
 
@@ -315,12 +316,19 @@ struct DeepWorkView: View {
         }
     }
 
+    private var remainingTime: TimeInterval {
+        max(0, sessionDuration - profile.focusSessionElapsed)
+    }
+
     // MARK: - Actions
 
     private func startSession() {
-        profile.startFocusSession()
-        if let id = selectedTaskID {
-            taskStore.startTask(id)
+        if let taskID = selectedTaskID,
+           let task = taskStore.tasks.first(where: { $0.id == taskID })
+        {
+            sessionDuration = TimeInterval(task.estimatedMinutes * 60)
+            profile.startFocusSession()
+            taskStore.startTask(taskID)
         }
     }
 
@@ -329,6 +337,7 @@ struct DeepWorkView: View {
             taskStore.tasks.first { $0.id == id }?.cognitiveLoad
         } ?? 5
         profile.endFocusSession(cognitiveLoad: cogLoad)
+        sessionDuration = 0
     }
 
     private func startBreak() {
@@ -360,7 +369,10 @@ struct DeepWorkView: View {
 
     // MARK: - Formatting
 
-    private func formatElapsed(_ interval: TimeInterval) -> String {
+    private func formatRemainingTime(_ interval: TimeInterval) -> String {
+        if interval.isZero {
+            return "Time's up!"
+        }
         let total = Int(interval)
         let hours = total / 3600
         let minutes = (total % 3600) / 60
