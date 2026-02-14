@@ -98,16 +98,15 @@ class CognitiveEngine {
         ("proofread", 3),
     ]
 
-    private let deadlinePatterns: [(pattern: String, offset: TimeInterval)] = [
-        ("today", 0),
+    // Day-level deadline patterns (these get snapped to 23:59 of the target day)
+    // Order matters: longer/more-specific patterns MUST come first
+    private let dayDeadlinePatterns: [(pattern: String, daysOffset: Int)] = [
+        ("day after tomorrow", 2),
+        ("next week", 7),
+        ("this week", 3),
+        ("tomorrow", 1),
         ("tonight", 0),
-        ("tomorrow", 86400),
-        ("day after tomorrow", 86400 * 2),
-        ("next week", 86400 * 7),
-        ("this week", 86400 * 3),
-        ("in an hour", 3600),
-        ("in 2 hours", 7200),
-        ("in 3 hours", 10800),
+        ("today", 0),
     ]
 
     // MARK: - Keyword-Based Parsing (fallback)
@@ -579,15 +578,42 @@ class CognitiveEngine {
 
     func extractDeadline(_ text: String) -> Date {
         let calendar = Calendar.current
+        let now = Date()
 
-        // Check specific day names
+        // --- 1. Time-precise patterns (return exact offset, NO snap to 23:59) ---
+
+        // "in an hour" / "in 1 hour"
+        if text.contains("in an hour") || text.contains("in 1 hour") {
+            return now.addingTimeInterval(3600)
+        }
+
+        // "in X hours"
+        if let range = text.range(of: #"in (\d+) hours?"#, options: .regularExpression) {
+            let match = String(text[range])
+            let nums = match.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
+            if let hours = Int(nums) {
+                return now.addingTimeInterval(Double(hours) * 3600)
+            }
+        }
+
+        // "in X minutes" / "in X mins"
+        if let range = text.range(of: #"in (\d+)\s*(?:min(?:ute)?s?|mins)"#, options: .regularExpression) {
+            let match = String(text[range])
+            let nums = match.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
+            if let mins = Int(nums) {
+                return now.addingTimeInterval(Double(mins) * 60)
+            }
+        }
+
+        // --- 2. Specific day names (snap to 23:59 of that day) ---
+
         let dayNames = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
         for (idx, day) in dayNames.enumerated() {
             if text.contains(day) {
                 let weekday = idx + 2 // Calendar weekday: Sun=1, Mon=2, ...
                 let adjustedWeekday = weekday > 7 ? weekday - 7 : weekday
                 if let next = calendar.nextDate(
-                    after: Date(),
+                    after: now,
                     matching: DateComponents(weekday: adjustedWeekday),
                     matchingPolicy: .nextTime
                 ) {
@@ -596,41 +622,35 @@ class CognitiveEngine {
             }
         }
 
-        // Check relative patterns
-        for pattern in deadlinePatterns {
-            if text.contains(pattern.pattern) {
-                let base = Date().addingTimeInterval(pattern.offset)
-                return calendar.date(bySettingHour: 23, minute: 59, second: 0, of: base) ?? base
-            }
-        }
+        // --- 3. "in X days" (snap to 23:59, DST-safe) ---
 
-        // Check "in X days" pattern
         if let range = text.range(of: #"in (\d+) days?"#, options: .regularExpression) {
             let match = String(text[range])
             let nums = match.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
             if let days = Int(nums) {
-                let base = Date().addingTimeInterval(Double(days) * 86400)
+                let base = calendar.date(byAdding: .day, value: days, to: now) ?? now
                 return calendar.date(bySettingHour: 23, minute: 59, second: 0, of: base) ?? base
             }
         }
 
-        // Check "in X hours" pattern
-        if let range = text.range(of: #"in (\d+) hours?"#, options: .regularExpression) {
-            let match = String(text[range])
-            let nums = match.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
-            if let hours = Int(nums) {
-                return Date().addingTimeInterval(Double(hours) * 3600)
+        // --- 4. Relative day patterns (snap to 23:59, DST-safe) ---
+        // Checked in order: longer/more-specific patterns first
+
+        for pattern in dayDeadlinePatterns {
+            if text.contains(pattern.pattern) {
+                let base = calendar.date(byAdding: .day, value: pattern.daysOffset, to: now) ?? now
+                return calendar.date(bySettingHour: 23, minute: 59, second: 0, of: base) ?? base
             }
         }
 
-        // Check "by <time>" patterns
-        if text.contains("by tonight") || text.contains("by end of day") || text.contains("by eod") {
-            return calendar.date(bySettingHour: 23, minute: 59, second: 0, of: Date()) ?? Date()
+        // "by end of day" / "by eod" / "by tonight"
+        if text.contains("by end of day") || text.contains("by eod") || text.contains("by tonight") {
+            return calendar.date(bySettingHour: 23, minute: 59, second: 0, of: now) ?? now
         }
 
-        // Default: end of today
-        return calendar.date(bySettingHour: 23, minute: 59, second: 0, of: Date())
-            ?? Date().addingTimeInterval(86400)
+        // --- 5. Default: end of today ---
+        return calendar.date(bySettingHour: 23, minute: 59, second: 0, of: now)
+            ?? now.addingTimeInterval(86400)
     }
 
     private func estimateDuration(_ cognitiveLoad: Int, text: String) -> Int {
