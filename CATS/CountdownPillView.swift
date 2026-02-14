@@ -24,7 +24,10 @@ struct CountdownPillView: View {
                 .transition(.catBounce)
                 .id(currentCat)
 
-            if let task = taskStore.nextDeadlineTask {
+            // Show Pomodoro timer when deep work session is active
+            if profile.isFocusSessionActive {
+                pomodoroTimerView
+            } else if let task = taskStore.nextDeadlineTask {
                 // Divider dot with pulse for urgent
                 Circle()
                     .fill(urgencyColor(task))
@@ -67,6 +70,41 @@ struct CountdownPillView: View {
         }
     }
 
+    // MARK: - Pomodoro Timer View
+
+    private var pomodoroTimerView: some View {
+        HStack(spacing: 6) {
+            // Pulsing focus indicator
+            Circle()
+                .fill(.purple)
+                .frame(width: 5, height: 5)
+                .changeEffect(
+                    .pulse(shape: Circle().inset(by: -2), count: 3),
+                    value: Int(profile.focusSessionElapsed) / 5,
+                    isEnabled: true
+                )
+
+            Text("Deep Work")
+                .font(.system(size: 9, weight: .semibold, design: .rounded))
+                .foregroundStyle(.purple)
+
+            // Pomodoro countdown (25 min session)
+            let pomodoroSeconds = 25 * 60
+            let elapsed = Int(profile.focusSessionElapsed)
+            let remaining = max(0, pomodoroSeconds - elapsed)
+
+            Text(formatPomodoroTime(remaining))
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundStyle(remaining < 60 ? .orange : .white)
+        }
+    }
+
+    private func formatPomodoroTime(_ seconds: Int) -> String {
+        let mins = seconds / 60
+        let secs = seconds % 60
+        return String(format: "%02d:%02d", mins, secs)
+    }
+
     private func urgencyColor(_ task: CATSTask) -> Color {
         if task.isOverdue { return .red }
         if task.timeRemaining < 3600 { return .red }
@@ -79,7 +117,10 @@ struct CountdownPillView: View {
         catTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
             DispatchQueue.main.async {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
-                    if let task = taskStore.nextDeadlineTask, task.isUrgent {
+                    if profile.isFocusSessionActive {
+                        // Deep work mode - show focused cat
+                        currentCat = CatFaces.page.deepFocus
+                    } else if let task = taskStore.nextDeadlineTask, task.isUrgent {
                         currentCat = CatFaces.stressed.randomElement()!
                         urgencyPulse += 1
                     } else {

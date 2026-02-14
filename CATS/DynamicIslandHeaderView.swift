@@ -89,6 +89,14 @@ struct DynamicIslandHeaderView: View {
             }
 
             // Navigation buttons
+            Button(action: { vm.showDeepWork() }) {
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 12))
+                    .foregroundStyle(vm.contentType == .deepWork ? .white : .secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Deep Work")
+
             Button(action: { vm.showSettings() }) {
                 Image(systemName: "gearshape")
                     .font(.system(size: 12))
