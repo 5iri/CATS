@@ -38,6 +38,16 @@ open *.xcodeproj
 - Select the Mac target in Xcode and hit **Run**.
 - Grant calendar access when prompted.
 
+## Packaging (macOS App + DMG)
+
+```bash
+./scripts/package-macos.sh
+```
+
+- Outputs are written to `dist/`.
+- The script produces both a `.zip` and a `.dmg`.
+- The app is built unsigned for local distribution/testing.
+
 ---
 
 ## Usage
